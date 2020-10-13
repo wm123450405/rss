@@ -1,0 +1,32 @@
+{
+  "name": "rss",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-packager ./ --all --out dist --app-version 1.4.0 --overwrite --icon=./assets/icon.ico"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wm123450405/rss.git"
+  },
+  "keywords": [
+    "rss"
+  ],
+  "author": "wm123450405",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wm123450405/rss/issues"
+  },
+  "homepage": "https://github.com/wm123450405/rss#readme",
+  "devDependencies": {
+    "electron": "^10.1.3",
+    "electron-packager": "^15.1.0"
+  },
+  "dependencies": {
+    "puppeteer": "^5.3.1",
+    "segment": "^0.1.3",
+    "asyncbox": "^2.6.0"
+  }
+}

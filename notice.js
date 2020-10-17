@@ -1,53 +1,128 @@
-const { Notification, shell } = require("electron");
+const { sleep } = require("asyncbox");
+const { shell, BrowserWindow } = require("electron");
+// const { NotificationCenter, WindowsBalloon, Growl } = require("node-notifier");
+// const notifier = require('node-notifier');
+// const notifier = new Growl({ withFallback: false })
 
-const notices = [];
+// notifier.on('click', function() {
+//   console.log('click', arguments);
+// }).on('activate', function() {
+//   console.log('activate', arguments);
+// }).on('close', function() {
+//   console.log('close', arguments);
+// }).on('timeout', function() {
+//   console.log('timeout', arguments);
+// });
 
 class Notice {
-  static shown = false;
-  static send(information) {
-    notices.push(information);
-    Notice.delaySend();
+  constructor(app) {
+    this.app = app;
+    this.shown = false;
+    this.notices = [];
+    this.id = 0;
+    this.window = new BrowserWindow({
+      width: 450,
+      height: 200,
+      minimizable: false,
+      maximizable: false,
+      alwaysOnTop: true,
+      movable: false,
+      resizable: false,
+      show: false,
+      titleBarStyle: 'hidden',
+      frame: false,
+      transparent: true,
+      backgroundColor: '#0000FFE0', 
+      webPreferences: {
+        nodeIntegration: true,
+        experimentalFeatures: true
+      }
+    });
+    this.window.menuBarVisible = false;
+    this.window.loadFile(`windows/notice.html`);
   }
-  static delaySend() {
-    setTimeout(Notice.doSend, 1500);
+  send(information) {
+    this.notices.push(information);
+    this.delaySend();
   }
-  static doSend() {
-    console.log('do send ', Notice.shown);
-    if (!Notice.shown) {
-      if (notices.length) {
-        Notice.shown = true;
-        let information = notices.shift();
-        if (Notification.isSupported()) {
-          let notification = new Notification({
-            title: information.title,
-            body: information.summary
-          });
-          let timeout = setTimeout(() => {
-            notices.push(information);
-            Notice.shown = false;
-            Notice.delaySend();
-          }, 30000);
-          notification.on('click', async () => {
-            console.log('click notice');
-            clearTimeout(timeout);
-            Notice.shown = false;
-            try {
-              await shell.openExternal(information.url);
-            } catch(e) {
-              console.error(e);
-            }
-            Notice.delaySend();
-          });
-          notification.on('close', () => {
-            console.log('close notice');
-            clearTimeout(timeout);
-            Notice.shown = false;
-            Notice.delaySend();
-          })
-          notification.show();
-        }
+  async delaySend() {
+    await sleep(1500);
+    this.doSend();
+  }
+  doSend() {
+    if (!this.shown) {
+      if (this.notices.length) {
+        this.shown = true;
+        let information = this.notices.shift();
+        this.window.webContents.send('notice', {
+          type: 'message',
+          data: information
+        })
+        this.window.show();
+        // toaster.notify();
+        // notifier.notify({
+        //   id: id++,
+        //   title: information.title,
+        //   message: information.summary || information.title,
+        //   timeout: false,
+        //   time: 30000,
+        //   wait: true,
+        //   appID: 'smart-rss'
+        // }, async (err, response, metadata) => {
+        //   Notice.shown = false;
+        //   console.log(err, response, metadata);
+        //   try {
+        //     if (response === 'activate' || typeof response === 'undefined') {
+        //       await shell.openExternal(information.url);
+        //     } else {
+        //       notifier.notify({
+        //         remove: id,
+        //         title: information.title,
+        //         timeout: false,
+        //         wait: true,
+        //         appID: 'smart-rss'
+        //       })
+        //     }
+        //   } catch(e) {
+        //     console.error(e);
+        //     notices.push(information);
+        //   }
+        //   Notice.delaySend();
+        // });
+        // setTimeout(() => {
+        //   notifier.notify({
+        //     close: id,
+        //     title: information.title,
+        //     wait: true,
+        //     appID: 'smart-rss'
+        //   })
+        // }, 2500)
+        // setTimeout(() => {
+        //   notifier.notify({
+        //     close: id,
+        //     title: information.title,
+        //     wait: true,
+        //     appID: 'smart-rss'
+        //   })
+        // }, 15000)
+        // notifier.notify(new WindowsToaster({
+        //   title: information.title,
+        //   message: information.summary || information.title,
+        //   wait: true
+        // }), async (err, response, metadata) => {
+        //   Notice.shown = false;
+        //   try {
+        //     if (response === 'activate' || typeof response === 'undefined') {
+        //       await shell.openExternal(information.url);
+        //     }
+        //   } catch(e) {
+        //     console.error(e);
+        //     notices.push(information);
+        //   }
+        //   Notice.delaySend();
+        // });
       } else {
-        Notice.shown = false;
+        this.shown = false;
       }
     }
   }

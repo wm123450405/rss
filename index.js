@@ -6,6 +6,7 @@ const Information = require('./information');
 const { sleep } = require('asyncbox');
 const Notice = require('./notice');
 const IthomeParser = require('./parsers/ithome');
+const DonewsParser = require('./parsers/donews');
 
 let stop = false;
 
@@ -20,12 +21,14 @@ let stop = false;
     }
   });
   const page = await browser.newPage();
+  const notice = new Notice(app);
 
   await sleep(5000);
 
   let parsers = [
     new CnbetaParser(),
-    new IthomeParser()
+    new IthomeParser(),
+    new DonewsParser()
   ];
   const informations = [];
   while(!stop) {
@@ -35,9 +38,9 @@ let stop = false;
           await page.goto(parser.url, { timeout: 30000 });
           for (let info of (await parser.parse(page))) {
             if (Information.add(info)) {
-              console.log('added', info);
+              // console.log('added', info);
               if (/苹果|微软|谷歌|阿里/.test(info.title)) {
-                Notice.send(info);
+                notice.send(info);
               }
             }
           }

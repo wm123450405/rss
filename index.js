@@ -11,7 +11,14 @@ const DonewsParser = require('./parsers/donews');
 let stop = false;
 
 (async () => {
+  app.commandLine.appendSwitch("enable-transparent-visuals");
   await app.whenReady();
+  await sleep(1000);
+  // Electron has a bug on linux where it
+  // won't initialize properly when using
+  // transparency. To work around that, it
+  // is necessary to delay the window
+  // spawn function.
   const browser = await puppeteer.launch({
     headless: false,
     userDataDir: 'userdata',

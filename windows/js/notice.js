@@ -1,31 +1,35 @@
 const { ipcRenderer } = nodeRequire('electron');
-// function getParameter(name) {
-//   let v = window.location.search.substring(1).split('&').find(str => str.startsWith(name + '='));
-//   if (v) return decodeURIComponent(v.substring(name.length + 1));
-//   return '';
-// }
 
-// window.onload = function() {
-//   let image = getParameter('image');
-//   if (image) {
-//     document.getElementById('image').src = image;
-//   } else {
-//     document.getElementById('image').style.display = 'none';
-//   }
-//   document.getElementById('title').innerHTML = getParameter('title');
-//   document.getElementById('title').href = getParameter('url');
-//   document.getElementById('summary').innerHTML = getParameter('summary');
-// }
+let url = '';
+
 ipcRenderer.on('notice', (event, data) => {
-  alert(JSON.stringify(data));
   if (data.type === 'message') {
+    document.body.style.height = '0px';
     if (data.data.image) {
       document.getElementById('image').src = data.data.image;
+      document.getElementById('image').style.display = 'inline-block';
     } else {
       document.getElementById('image').style.display = 'none';
     }
     document.getElementById('title').innerHTML = data.data.title;
-    document.getElementById('title').href = data.data.url;
-    document.getElementById('summary').innerHTML = data.data.summary;
+    if (data.data.summary) {
+      document.getElementById('summary').innerHTML = data.data.summary;
+    } else {
+      document.getElementById('summary').style.display = 'inline-block';
+      document.getElementById('summary').style.display = 'none';
+    }
+    url = data.data.url;
+    setTimeout(() => {
+      let size = {
+        height: document.body.scrollHeight,
+        width: document.body.scrollWidth
+      };
+      document.body.style.height = size.height + 'px';
+      ipcRenderer.send('notice', { type: 'resize', size });
+    });
   }
+})
+
+document.documentElement.addEventListener('click', () => {
+  ipcRenderer.send('notice', { type: 'activate', url });
 })

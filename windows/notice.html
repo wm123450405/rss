@@ -5,20 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>tips</title>
   <style>
-    * { padding: 0; margin: 0; }
-    a { text-decoration: none; color: #FFFFFF }
-    html { width: 450px; }
-    body { width: 100%; }
+    * { padding: 0; margin: 0; cursor: pointer; }
+    body { background-color: #0063B180; width: 450px; overflow: hidden; }
+    #title { color: #FFFFFF; flex-wrap: wrap; word-break: break-all; }
+    #summary { color: #FFFFFF; flex-wrap: wrap; word-break: break-all; }
   </style>
   <script src="js/prepare.js"></script>
   <script src="js/notice.js"></script>
 </head>
 <body>
-  <div style="display: flex; flex-direction: row;">
+  <div style="display: flex; flex-direction: row; width: 450px;">
     <img id="image" src="" alt="" style="flex: none; max-width: 150px; max-height: 150px; padding: 10px; padding-right: 0;">
     <div style="flex: 1; padding: 10px;">
-      <h2><a id="title" href=""></a></h2>
-      <p><pre id="summary"></pre></p>
+      <h3 id="title"></h3>
+      <p id="summary"></p>
     </div>
   </div>
 </body>

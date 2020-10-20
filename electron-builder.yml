@@ -1,7 +1,7 @@
  win:
+   icon: assets/icon/icon.ico
    target:
-     - target: msi
-       icon: assets/icon/icon.ico
+     - target: nsis
        arch:
          - x64
          - ia32

@@ -32,6 +32,8 @@ let stop = false;
 
   await sleep(5000);
 
+  notice.send({ title: 'test', summary: 'test2', url: 'https://baidu.com/' });
+
   let parsers = [
     new CnbetaParser(),
     new IthomeParser(),

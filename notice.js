@@ -2,20 +2,6 @@ const { sleep } = require("asyncbox");
 const { shell, screen, ipcMain } = require("electron");
 const { BrowserWindow } = require('glasstron');
 const { tween } = require('shifty');
-console.log( tween );
-// const { NotificationCenter, WindowsBalloon, Growl } = require("node-notifier");
-// const notifier = require('node-notifier');
-// const notifier = new Growl({ withFallback: false })
-
-// notifier.on('click', function() {
-//   console.log('click', arguments);
-// }).on('activate', function() {
-//   console.log('activate', arguments);
-// }).on('close', function() {
-//   console.log('close', arguments);
-// }).on('timeout', function() {
-//   console.log('timeout', arguments);
-// });
 
 class Notice {
   constructor(app) {
@@ -73,6 +59,10 @@ class Notice {
           this.notices.push(this.current);
         }
         this.delaySend();
+      } else if (data.type === 'close') {
+        this.window.hide();
+        this.shown = false;
+        this.delaySend();
       }
     })
   }
@@ -94,69 +84,6 @@ class Notice {
           type: 'message',
           data: this.current
         })
-
-        // toaster.notify();
-        // notifier.notify({
-        //   id: id++,
-        //   title: information.title,
-        //   message: information.summary || information.title,
-        //   timeout: false,
-        //   time: 30000,
-        //   wait: true,
-        //   appID: 'smart-rss'
-        // }, async (err, response, metadata) => {
-        //   Notice.shown = false;
-        //   console.log(err, response, metadata);
-        //   try {
-        //     if (response === 'activate' || typeof response === 'undefined') {
-        //       await shell.openExternal(information.url);
-        //     } else {
-        //       notifier.notify({
-        //         remove: id,
-        //         title: information.title,
-        //         timeout: false,
-        //         wait: true,
-        //         appID: 'smart-rss'
-        //       })
-        //     }
-        //   } catch(e) {
-        //     console.error(e);
-        //     notices.push(information);
-        //   }
-        //   Notice.delaySend();
-        // });
-        // setTimeout(() => {
-        //   notifier.notify({
-        //     close: id,
-        //     title: information.title,
-        //     wait: true,
-        //     appID: 'smart-rss'
-        //   })
-        // }, 2500)
-        // setTimeout(() => {
-        //   notifier.notify({
-        //     close: id,
-        //     title: information.title,
-        //     wait: true,
-        //     appID: 'smart-rss'
-        //   })
-        // }, 15000)
-        // notifier.notify(new WindowsToaster({
-        //   title: information.title,
-        //   message: information.summary || information.title,
-        //   wait: true
-        // }), async (err, response, metadata) => {
-        //   Notice.shown = false;
-        //   try {
-        //     if (response === 'activate' || typeof response === 'undefined') {
-        //       await shell.openExternal(information.url);
-        //     }
-        //   } catch(e) {
-        //     console.error(e);
-        //     notices.push(information);
-        //   }
-        //   Notice.delaySend();
-        // });
       } else {
         this.shown = false;
       }

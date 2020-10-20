@@ -2,9 +2,11 @@ const { sleep } = require("asyncbox");
 const { shell, screen, ipcMain } = require("electron");
 const { BrowserWindow } = require('glasstron');
 const { tween } = require('shifty');
+const { EventEmitter } = require('events');
 
-class Notice {
+class Notice extends EventEmitter {
   constructor(app) {
+    super();
     this.app = app;
     this.shown = false;
     this.notices = [];
@@ -53,6 +55,7 @@ class Notice {
         const url = data.url;
         this.window.hide();
         this.shown = false;
+        this.emit('interset', this.current);
         try {
           await shell.openExternal(url);
         } catch(e) {
@@ -62,6 +65,7 @@ class Notice {
       } else if (data.type === 'close') {
         this.window.hide();
         this.shown = false;
+        this.emit('uninterset', this.current);
         this.delaySend();
       }
     })

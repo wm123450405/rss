@@ -5,8 +5,10 @@ const Parser = require('./parser');
 const Information = require('./information');
 const { sleep } = require('asyncbox');
 const Notice = require('./notice');
+const Hot = require('./hot');
 const IthomeParser = require('./parsers/ithome');
 const DonewsParser = require('./parsers/donews');
+const Enumerable = require('linq-js');
 
 (async () => {
   app.commandLine.appendSwitch("enable-transparent-visuals");
@@ -27,10 +29,9 @@ const DonewsParser = require('./parsers/donews');
   });
   const page = await browser.newPage();
   const notice = new Notice(app);
+  const hot = new Hot(app);
 
   await sleep(5000);
-
-  notice.send({ title: 'test', summary: 'test2', url: 'https://www.baidu.com/' });
 
   let parsers = [
     new CnbetaParser(),
@@ -38,8 +39,20 @@ const DonewsParser = require('./parsers/donews');
     new DonewsParser()
   ];
   let stop = false;
-  let initing = true;
-  while(!stop) {
+  let matcher = hot.restore();
+  notice.on('interset', info => {
+    let sum = Enumerable.sum(info.tags, tag => tag.weight || 0);
+    for (let tag of info.tags) {
+      matcher.interest([ tag.word ], tag.weight / sum);
+    }
+  }).on('uninterset', info => {
+    let sum = Enumerable.sum(info.tags, tag => tag.weight || 0);
+    for (let tag of info.tags) {
+      matcher.uninterest([ tag.word ], tag.weight / sum);
+    }
+  })
+  for(let tick = 0; !stop; tick++) {
+    let added = [];
     for (let parser of parsers) {
       let informations = [];
       if (parser.type === Parser.Types.PAGE) {
@@ -54,21 +67,28 @@ const DonewsParser = require('./parsers/donews');
       }
       for (let info of informations) {
         if (Information.add(info)) {
-          // console.log('added', info);
-          if (!initing) {
-            if (/苹果|微软|谷歌|阿里/.test(info.title)) {
-              notice.send(info);
-            }
-          }
+          added.push(info);
         }
       }
     }
-    if (initing) {
-      let hotTags = Information.hotTags();
-      console.log(hotTags);
+    if (tick % 1 == 0) {
+      let tags = Information.hotTags();
+      console.log(tags);
+      let words = tags.map(tag => tag.word).filter(word => !matcher.includes(word));
+      console.log(words);
+      if (words.length > 10) {
+        words = await hot.show(words);
+        if (words.length) {
+          matcher.interest(words);
+        }
+      }
     }
-    await sleep(30000);
-    initing = false;
+    for (let info of added) {
+      if (matcher.match(info)) {
+        notice.send(info);
+      }
+    }
+    await sleep(10000);
   }
   
   await browser.close();

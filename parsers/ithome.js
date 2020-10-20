@@ -12,7 +12,7 @@ class IthomeParser extends Parser {
     return Parser.Types.PAGE;
   }
   async parse(page) {
-    let infos = await page.evaluate(`$('ul.nl li').map(function() {return {title: $(this).children('a').text(), url: $(this).children('a').attr('href')}}).toArray()`);
+    let infos = await page.evaluate(`$('ul.nl li').map(function() {return {title: $(this).children('a').text(), url: $(this).children('a').attr('href')}}).toArray().slice(0, 90)`);
     if (infos) {
       return infos.filter(info => info.url).map(info => new Information(info.url, info.title, info.summary, info.image));
     } else {

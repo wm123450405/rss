@@ -8,8 +8,6 @@ const Notice = require('./notice');
 const IthomeParser = require('./parsers/ithome');
 const DonewsParser = require('./parsers/donews');
 
-let stop = false;
-
 (async () => {
   app.commandLine.appendSwitch("enable-transparent-visuals");
   await app.whenReady();
@@ -32,35 +30,45 @@ let stop = false;
 
   await sleep(5000);
 
-  notice.send({ title: 'test', summary: 'test2', url: 'https://baidu.com/' });
+  notice.send({ title: 'test', summary: 'test2', url: 'https://www.baidu.com/' });
 
   let parsers = [
     new CnbetaParser(),
     new IthomeParser(),
     new DonewsParser()
   ];
-  const informations = [];
+  let stop = false;
+  let initing = true;
   while(!stop) {
     for (let parser of parsers) {
+      let informations = [];
       if (parser.type === Parser.Types.PAGE) {
         try {
           await page.goto(parser.url, { timeout: 30000 });
-          for (let info of (await parser.parse(page))) {
-            if (Information.add(info)) {
-              // console.log('added', info);
-              if (/苹果|微软|谷歌|阿里/.test(info.title)) {
-                notice.send(info);
-              }
-            }
-          }
+          informations = await parser.parse(page);
         } catch(e) {
           console.error(e);
         }
       } else if (parser.type === Parser.Types.AJAX) {
 
       }
+      for (let info of informations) {
+        if (Information.add(info)) {
+          // console.log('added', info);
+          if (!initing) {
+            if (/苹果|微软|谷歌|阿里/.test(info.title)) {
+              notice.send(info);
+            }
+          }
+        }
+      }
+    }
+    if (initing) {
+      let hotTags = Information.hotTags();
+      console.log(hotTags);
     }
     await sleep(30000);
+    initing = false;
   }
   
   await browser.close();

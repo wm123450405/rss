@@ -1,10 +1,11 @@
 const nodejieba = require('nodejieba');
 const Enumerable = require('linq-js');
+const config = require('./config');
 
 const informations = [];
 
 const titleWeightSplit = 6;
-const summaryWeightSplit = 12;
+const summaryWeightSplit = 18;
 const weightMerge = (original, weight, summary = false) => original + (summary ? weight * 0.2 : weight);
 const ignoreWords = [ 'pro', 'mini', 'max' ]
 const ignoreTags = [ 't', 'm', 'q', 'r', 'p', 'c', 'u', 'w', 'a', 'ad', 'd', 'TIME' ]; //时间副词
@@ -68,7 +69,7 @@ class Information {
       .where(({ word, tag }) => !ignoreTag({ word, tag }) && !ignores.includes(word.toLowerCase()))
       .groupBy(({ word, tag }) => ({ word, tag }), tag => tag.weight, ({ word, tag }, grouping) => ({ word, tag, weight: grouping.reduce(weightMerge, 0) }), (one, other) => one.word === other.word && one.tag === other.tag)
       .orderByDescending(tag => tag.weight)
-      .take(150)
+      .take(config.hot.size)
       .toArray();
   }
 }

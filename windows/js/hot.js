@@ -13,7 +13,7 @@ window.addEventListener('load', function() {
       tagContains.innerHTML = '';
       let otherTagContains = document.getElementById('other-tags');
       otherTagContains.innerHTML = '';
-      for (let tag of data.tags.slice(0, 50)) {
+      for (let tag of data.mainTags) {
         let tagDiv = document.createElement('div');
         tagDiv.className = 'tag';
         tagDiv.innerHTML = tag;
@@ -28,7 +28,7 @@ window.addEventListener('load', function() {
         })
         tagContains.appendChild(tagDiv);
       }
-      for (let tag of data.tags.slice(50)) {
+      for (let tag of data.otherTags) {
         let tagDiv = document.createElement('div');
         tagDiv.className = 'tag';
         tagDiv.innerHTML = tag;

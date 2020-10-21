@@ -93,6 +93,16 @@ class Notice extends EventEmitter {
       }
     }
   }
+  async pause() {
+    while (this.shown) {
+      await sleep(500);
+    }
+    this.shown = true;
+  }
+  async resume() {
+    this.shown = false;
+    this.delaySend();
+  }
 }
 
 module.exports = Notice;

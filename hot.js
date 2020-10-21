@@ -1,8 +1,12 @@
 const { sleep } = require("asyncbox");
-const { shell, screen, ipcMain } = require("electron");
+const { screen, ipcMain } = require("electron");
 const { BrowserWindow } = require('glasstron');
 const { tween } = require('shifty');
 const Matcher = require("./matcher");
+const fs = require('fs');
+const path = require('path');
+
+const config = require('./config');
 
 class Hot {
   constructor(app) {
@@ -57,22 +61,39 @@ class Hot {
         this.selected = [];
       }
     })
+    this.initStoreage();
+  }
+  initStoreage() {
+    if (!fs.existsSync(config.path.dir)) {
+      fs.mkdirSync(config.path.dir);
+    }
+    if (!fs.existsSync(path.join(config.path.dir, config.path.hot))) {
+      fs.writeFileSync(path.join(config.path.dir, config.path.hot), '{}');
+    }
   }
   async show(tags) {
     if (!tags.length) return tags;
     this.selected = false;
     this.window.setBounds({ height: 0 });
-    this.window.webContents.send('hot', { type: 'tags', tags });
+    this.window.webContents.send('hot', { type: 'tags', mainTags: tags.slice(0, config.hot.main), otherTags: tags.slice(config.hot.main) });
     while (!this.selected) {
       await sleep(500);
     }
     return this.selected;
   }
   restore() {
-    return new Matcher([]);
+    const saved = JSON.parse(fs.readFileSync(path.join(config.path.dir, config.path.hot)));
+    this.matcher = new Matcher(saved.matcher || []);
+    this.matcher.on('changed', () => this.save());
+    return {
+      matcher: this.matcher
+    }
   }
   save() {
-
+    const saved = {
+      matcher: this.matcher.tags
+    };
+    fs.writeFileSync(path.join(config.path.dir, config.path.hot), JSON.stringify(saved));
   }
 }
 

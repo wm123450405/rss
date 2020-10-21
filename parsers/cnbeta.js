@@ -1,4 +1,3 @@
-const Information = require("../information");
 const Parser = require("../parser");
 
 class CnbetaParser extends Parser {
@@ -11,10 +10,14 @@ class CnbetaParser extends Parser {
   get type() {
     return Parser.Types.PAGE;
   }
+  async refresh(page) {
+    page.goto(this.url).catch(e => { });
+    await page.waitForSelector('dl');
+  }
   async parse(page) {
     let infos = await page.evaluate(`$('dl').map(function(){return {title:$(this).children('dt').text(),summary:$(this).children('dd').text(),image:$(this).find('img').attr('data-original'),url:$(this).children('dt').children('a').attr('href')}}).toArray()`);
     if (infos) {
-      return infos.filter(info => info.url).map(info => new Information(info.url, info.title, info.summary, info.image));
+      return infos.filter(info => info.url);
     } else {
       console.log('no infos');
       return [];

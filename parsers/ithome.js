@@ -1,4 +1,3 @@
-const Information = require("../information");
 const Parser = require("../parser");
 
 class IthomeParser extends Parser {
@@ -6,15 +5,19 @@ class IthomeParser extends Parser {
     super('https://www.ithome.com/')
   }
   get name() {
-    return 'cnbeta';
+    return 'IT之家';
   }
   get type() {
     return Parser.Types.PAGE;
   }
+  async refresh(page) {
+    await page.goto(this.url).catch(e => { });
+    // await page.waitForSelector('ul.nl>li');
+  }
   async parse(page) {
     let infos = await page.evaluate(`$('ul.nl li').map(function() {return {title: $(this).children('a').text(), url: $(this).children('a').attr('href')}}).toArray().slice(0, 90)`);
     if (infos) {
-      return infos.filter(info => info.url).map(info => new Information(info.url, info.title, info.summary, info.image));
+      return infos.filter(info => info.url);
     } else {
       console.log('no infos');
       return [];

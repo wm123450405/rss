@@ -1,7 +1,17 @@
- win:
-   icon: assets/icon/icon.ico
-   target:
-     - target: nsis
-       arch:
-         - x64
-         - ia32
+files:
+  - "**/*"
+  - "**/node_modules/**/*"
+  - "**/node_modules/puppeteer/**/*"
+  - "!(**/node_modules/puppeteer/.local-chromium/**/*)"
+  - "!debug/**/*"
+  - "!user/**/*"
+  - "!userdata/**/*"
+asar: 
+  smartUnpack: true
+win:
+  icon: "assets/icon/icon.ico"
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32

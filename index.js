@@ -3,13 +3,15 @@ const { app } = require('electron');
 const CnbetaParser = require('./parsers/cnbeta');
 const Parser = require('./parser');
 const Information = require('./information');
-const { sleep } = require('asyncbox');
+const { sleep, waitForCondition } = require('asyncbox');
 const Notice = require('./notice');
 const Hot = require('./hot');
 const IthomeParser = require('./parsers/ithome');
 const DonewsParser = require('./parsers/donews');
 const Enumerable = require('linq-js');
 const config = require('./config');
+const browserFetcher = puppeteer.createBrowserFetcher({ platform: 'win64' });
+const revision = require('puppeteer/package').puppeteer.chromium_revision;
 
 (async () => {
   let browser, page;
@@ -23,6 +25,26 @@ const config = require('./config');
       // transparency. To work around that, it
       // is necessary to delay the window
       // spawn function.
+
+      const notice = new Notice();
+      const hot = new Hot();
+      const { matcher } = hot.restore();
+
+      let downloaded = false, downloadError = false;
+      browserFetcher.download(revision)
+        .then(() => downloaded = true)
+        .catch(error => {
+          downloaded = true;
+          downloadError = error;
+        });
+
+      if (matcher.empty()) {
+
+      }
+      
+      await waitForCondition(() => downloaded);
+      if (downloadError) throw downloadError;
+
       browser = await puppeteer.launch({
         headless: true,
         userDataDir: 'userdata',
@@ -56,13 +78,12 @@ const config = require('./config');
       page = pages.length ? pages[0] : await browser.newPage();
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
       page.setDefaultTimeout(60000);
-      const notice = new Notice(app);
-      const hot = new Hot(app);
+      await notice.init(app);
+      await hot.init(app);
     
       await sleep(5000);
     
       let stop = false;
-      const { matcher } = hot.restore();
       notice.on('interset', info => {
         let sum = Enumerable.sum(info.tags, tag => tag.weight || 0);
         for (let tag of info.tags) {
@@ -74,9 +95,6 @@ const config = require('./config');
           matcher.uninterest([ tag.word ], tag.weight / sum);
         }
       })
-      if (matcher.empty()) {
-        //首次热词选择
-      }
       const parsers = [
         new CnbetaParser(),
         new IthomeParser(),

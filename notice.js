@@ -7,11 +7,13 @@ const { EventEmitter } = require('events');
 class Notice extends EventEmitter {
   constructor(app) {
     super();
-    this.app = app;
     this.shown = false;
     this.notices = [];
     this.id = 0;
     this.current = false;
+  }
+  async init(app) {
+    this.app = app;
     this.window = new BrowserWindow({
       width: 450,
       height: 0,
@@ -33,7 +35,6 @@ class Notice extends EventEmitter {
     this.window.blurType = "acrylic";
     this.window.setBlur(true);
     this.window.menuBarVisible = false;
-    this.window.loadFile(`windows/notice.html`);
     ipcMain.on('notice', async (event, data) => {
       if (data.type === 'resize') {
         const size = data.size;
@@ -69,6 +70,7 @@ class Notice extends EventEmitter {
         this.delaySend();
       }
     })
+    await this.window.loadFile(`windows/notice.html`);
   }
   send(information) {
     this.notices.push(information);

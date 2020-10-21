@@ -9,9 +9,12 @@ const path = require('path');
 const config = require('./config');
 
 class Hot {
-  constructor(app) {
-    this.app = app;
+  constructor() {
     this.selected = false;
+    this.initStoreage();
+  }
+  async init(app) {
+    this.app = app;
     this.window = new BrowserWindow({
       width: 450,
       height: 0,
@@ -33,7 +36,6 @@ class Hot {
     this.window.blurType = "acrylic";
     this.window.setBlur(true);
     this.window.menuBarVisible = false;
-    this.window.loadFile(`windows/hot.html`);
     ipcMain.on('hot', async (event, data) => {
       if (data.type === 'resize') {
         const size = data.size;
@@ -61,7 +63,7 @@ class Hot {
         this.selected = [];
       }
     })
-    this.initStoreage();
+    await this.window.loadFile(`windows/hot.html`);
   }
   initStoreage() {
     if (!fs.existsSync(config.path.dir)) {

@@ -1,2 +1,70 @@
 * { padding: 0; margin: 0; }
 body { background-color: #0063B1CC; width: 450px; overflow: hidden; }
+
+.tag {
+  background-color: #467496;
+  color: #fff;
+  padding: 8px;
+  flex: none;
+  display: inline-block;
+  margin-right: 8px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+.tag.selected, .tag:active {
+  background-color: #92ADC2;
+}
+.tag:hover {
+  border: 2px solid #92ADC2;
+  padding: 6px;
+}
+.btn.disabled {
+  background-color: #666666;
+  color: #CCC;
+  cursor: not-allowed;
+}
+.btn {
+  background-color: #467496;
+  color: #fff;
+  padding: 8px 48px;
+  flex: none;
+  display: inline-block;
+  margin-right: 8px;
+  cursor: pointer;
+}
+.btn.disabled:hover {
+  border: 0;
+  padding: 8px 48px;
+}
+.btn:hover {
+  border: 2px solid #92ADC2;
+  padding: 6px 46px;
+}
+.btn.active:hover {
+  background-color: #666666;
+}
+.btn:active {
+  background-color: #92ADC2;
+}
+.tip {
+  color: #92ADC2;
+  font-size: 12px;
+  padding: 8px;
+  flex: none;
+  font-size: 14px;
+}
+.link {
+  color: #012B4C;
+  cursor: pointer;
+}
+.link:hover {
+  color: #92ADC2;
+}
+.icon-btn {
+  width: 18px;
+  height: 18px;
+  font-size: 16px;
+  color: #FFF;
+  line-height: 18px;
+  text-align: center;
+}

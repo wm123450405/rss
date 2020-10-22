@@ -5,7 +5,7 @@ const defaultWeight = 100;
 const interest = (original, weight = 1) => original * (1 + 0.1 * weight);
 const uninterest = (original, weight = 1) => original * (1 - 0.1 * weight);
 const match = (original, weight) => original * weight;
-const thresholds = { max: 120, min: 50, line: 85 };
+const thresholds = { max: 120, min: 50, line: 105 };
 
 class Matcher extends EventEmitter {
   constructor(tags) {
@@ -40,7 +40,6 @@ class Matcher extends EventEmitter {
       .where(({ word }) => this.tags.some(tag => word === tag.word))
       .reduce((seed, { word }) => match(seed, this.tags.find(tag => word === tag.word).weight / 100), 1) * 100;
     return result >= thresholds.line;
-    // return info.tags.filter(({ weight }) => weight > 0).some(({ word }) => this.tags.some(tag => tag.weight >= thresholds.line && word === tag.word));
   }
   includes(word) {
     return this.tags.some(tag => (tag.weight <= thresholds.min || tag.weight >= thresholds.max) && tag.word === word);

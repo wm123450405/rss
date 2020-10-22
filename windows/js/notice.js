@@ -39,4 +39,9 @@ window.addEventListener('load', function() {
     ipcRenderer.send('notice', { type: 'close' });
     event.stopPropagation();
   })
+
+  document.getElementById('read').addEventListener('click', event => {
+    ipcRenderer.send('notice', { type: 'read' });
+    event.stopPropagation();
+  })
 })

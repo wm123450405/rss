@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>select parsers</title>
+  <link rel="stylesheet" href="css/prepare.css">
+  <style>
+    .classify {
+      display: flex;
+      flex-direction: column;
+      padding: 0 8px;
+    }
+    .classify-title {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      color: #fff;
+      font-size: 12px;
+    }
+    .tag img {
+      max-width: 150px;
+      max-height: 18px;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+  </style>
+  <script src="js/prepare.js"></script>
+  <script src="js/parsers.js"></script>
+</head>
+<body>
+  <div style="display: flex; flex-direction: column;">
+    <h3 style="flex: none; color: #fff; padding: 8px;">设置关注站点</h3>
+    <div id="classify">
+      <!-- <div class="classify">
+        <div class="classify-title">综合</div>
+        <div class="tags">
+          <div class="tag"><img src="https://www.donews.com/static/2020824new/images/logo.png" /><span>腾讯网</span></div>
+        </div>
+      </div> -->
+    </div>
+    <div style="display: flex; flex-direction: row; padding: 8px;">
+      <div id="ok" class="btn">确定</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -10,10 +10,6 @@ class IthomeParser extends Parser {
   get type() {
     return Parser.Types.PAGE;
   }
-  async refresh(page) {
-    await page.goto(this.url).catch(e => { });
-    // await page.waitForSelector('ul.nl>li');
-  }
   async parse(page) {
     let infos = await page.evaluate(`$('ul.nl li').map(function() {return {title: $(this).children('a').text(), url: $(this).children('a').attr('href')}}).toArray().slice(0, 90)`);
     if (infos) {

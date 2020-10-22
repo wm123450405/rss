@@ -1,13 +1,14 @@
 const puppeteer = require('puppeteer');
 const { app } = require('electron');
-const CnbetaParser = require('./parsers/cnbeta');
+// const CnbetaParser = require('./parsers/cnbeta');
 const Parser = require('./parser');
 const Information = require('./information');
 const { sleep, waitForCondition } = require('asyncbox');
 const Notice = require('./notice');
 const Hot = require('./hot');
-const IthomeParser = require('./parsers/ithome');
-const DonewsParser = require('./parsers/donews');
+// const IthomeParser = require('./parsers/ithome');
+// const DonewsParser = require('./parsers/donews');
+const fs = require('fs');
 const Enumerable = require('linq-js');
 const config = require('./config');
 const browserFetcher = puppeteer.createBrowserFetcher({ platform: 'win64' });
@@ -17,6 +18,17 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
   let browser, page;
   try {
     if (app.requestSingleInstanceLock()) {
+      let downloaded = false, downloadError = false;
+      browserFetcher.download(revision)
+        .then(() => downloaded = true)
+        .catch(error => {
+          downloaded = true;
+          downloadError = error;
+        });
+      if (!fs.existsSync(config.path.dir)) {
+        fs.mkdirSync(config.path.dir);
+      }
+
       app.commandLine.appendSwitch("enable-transparent-visuals");
       await app.whenReady();
       await sleep(1000);
@@ -27,19 +39,16 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
       // spawn function.
 
       const notice = new Notice();
+      await notice.init(app);
       const hot = new Hot();
-      const { matcher } = hot.restore();
+      await hot.init(app);
+      await Parser.init(app);
+      let { parsers } = Parser.restore();
+      let { matcher } = hot.restore();
 
-      let downloaded = false, downloadError = false;
-      browserFetcher.download(revision)
-        .then(() => downloaded = true)
-        .catch(error => {
-          downloaded = true;
-          downloadError = error;
-        });
-
-      if (matcher.empty()) {
-
+      if (!parsers.length) {
+        parsers = await Parser.show(parsers);
+        Parser.save({ parsers });
       }
       
       await waitForCondition(() => downloaded);
@@ -78,8 +87,6 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
       page = pages.length ? pages[0] : await browser.newPage();
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
       page.setDefaultTimeout(60000);
-      await notice.init(app);
-      await hot.init(app);
     
       await sleep(5000);
     
@@ -95,18 +102,18 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
           matcher.uninterest([ tag.word ], tag.weight / sum);
         }
       })
-      const parsers = [
-        new CnbetaParser(),
-        new IthomeParser(),
-        new DonewsParser()
-      ];
+      // const parsers = [
+      //   new CnbetaParser(),
+      //   new IthomeParser(),
+      //   new DonewsParser()
+      // ];
       for(let tick = 0; !stop; tick++) {
         let added = [];
         for (let parser of parsers) {
           let informations = [];
           if (parser.type === Parser.Types.PAGE) {
             try {
-              await parser.refresh(page);
+              await page.goto(parser.url);
               console.log('page loaded')
               informations = (await parser.parse(page)).map(({ url, title, summary, image, time }) => new Information(url, title, summary, image, time));
             } catch(e) {
@@ -121,7 +128,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
             }
           }
         }
-        if (tick % 1 == 0) {
+        if (tick % 10 == 0) {
           let tags = Information.hotTags();
           let words = tags.map(tag => tag.word).filter(word => !matcher.includes(word));
           if (words.length > 10) {
@@ -140,7 +147,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
             notice.send(info);
           }
         }
-        await sleep(10000);
+        await sleep(60000);
       }
     }
   } finally {

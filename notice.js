@@ -3,6 +3,7 @@ const { shell, screen, ipcMain } = require("electron");
 const { BrowserWindow } = require('glasstron');
 const { tween } = require('shifty');
 const { EventEmitter } = require('events');
+const { execSync } = require("child_process");
 
 class Notice extends EventEmitter {
   constructor(app) {
@@ -34,6 +35,7 @@ class Notice extends EventEmitter {
     });
     this.window.blurType = "acrylic";
     this.window.setBlur(true);
+    this.window.setSkipTaskbar(true);
     this.window.menuBarVisible = false;
     ipcMain.on('notice', async (event, data) => {
       if (data.type === 'resize') {
@@ -58,7 +60,20 @@ class Notice extends EventEmitter {
         this.shown = false;
         this.emit('interset', this.current);
         try {
-          await shell.openExternal(url);
+          if (url.startsWith('//')) {
+            url = 'https:' + url;
+          }
+          console.log(url);
+          switch (process.platform) {
+            case "darwin":
+              execSync('open ' + url);
+              break;
+            case "win32":
+              execSync('start ' + url);
+              break;
+            default:
+              execSync('xdg-open', [url]);
+          }
         } catch(e) {
           this.notices.push(this.current);
         }
@@ -67,6 +82,11 @@ class Notice extends EventEmitter {
         this.window.hide();
         this.shown = false;
         this.emit('uninterset', this.current);
+        this.delaySend();
+      } else if (data.type === 'read') {
+        this.window.hide();
+        this.shown = false;
+        this.emit('interset', this.current);
         this.delaySend();
       }
     })
@@ -85,6 +105,7 @@ class Notice extends EventEmitter {
       if (this.notices.length) {
         this.shown = true;
         this.current = this.notices.shift();
+        console.log('剩余未读:' + this.notices.length);
         this.window.setBounds({ height: 0 });
         this.window.webContents.send('notice', {
           type: 'message',

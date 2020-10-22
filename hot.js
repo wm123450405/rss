@@ -35,6 +35,7 @@ class Hot {
     });
     this.window.blurType = "acrylic";
     this.window.setBlur(true);
+    this.window.setSkipTaskbar(true);
     this.window.menuBarVisible = false;
     ipcMain.on('hot', async (event, data) => {
       if (data.type === 'resize') {
@@ -66,9 +67,6 @@ class Hot {
     await this.window.loadFile(`windows/hot.html`);
   }
   initStoreage() {
-    if (!fs.existsSync(config.path.dir)) {
-      fs.mkdirSync(config.path.dir);
-    }
     if (!fs.existsSync(path.join(config.path.dir, config.path.hot))) {
       fs.writeFileSync(path.join(config.path.dir, config.path.hot), '{}');
     }

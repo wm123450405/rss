@@ -10,10 +10,6 @@ class CnbetaParser extends Parser {
   get type() {
     return Parser.Types.PAGE;
   }
-  async refresh(page) {
-    page.goto(this.url).catch(e => { });
-    await page.waitForSelector('dl');
-  }
   async parse(page) {
     let infos = await page.evaluate(`$('dl').map(function(){return {title:$(this).children('dt').text(),summary:$(this).children('dd').text(),image:$(this).find('img').attr('data-original'),url:$(this).children('dt').children('a').attr('href')}}).toArray()`);
     if (infos) {

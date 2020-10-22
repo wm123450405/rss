@@ -5,6 +5,7 @@ window.addEventListener('load', function() {
 
   ipcRenderer.on('parsers', (event, data) => {
     if (data.type === 'parsers') {
+      document.body.style.height = '0px';
       parsers = data.parsers;
       const classifyContains = document.getElementById('classify');
       classifyContains.innerHTML = '';
@@ -49,6 +50,15 @@ window.addEventListener('load', function() {
         };
         document.body.style.height = size.height + 'px';
         ipcRenderer.send('parsers', { type: 'resize', size });
+      });
+    } else if (data.type === 'shown') {
+      setTimeout(() => {
+        let size = {
+          height: document.body.scrollHeight,
+          width: document.body.scrollWidth
+        };
+        document.body.style.height = size.height + 'px';
+        ipcRenderer.send('parsers', { type: 'fixsize', size });
       });
     }
   });

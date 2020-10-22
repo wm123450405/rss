@@ -32,8 +32,10 @@ const formatDateTime = datetime => {
     else if (/^\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().toDateString() + ' ' +  datetime + ':00').getTime();
     else if (/^\d{1,2}[-/]\d{1,2} \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().getFullYear() + (datetime.includes('-') ? '-' : '/') + datetime + ':00').getTime();
     else if (/^(\d{2}|\d{4})[-/]\d{1,2}[-/]\d{1,2} \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime + ':00').getTime();
+    else if (/^\d+天前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('天前', '')) * 86400000;
     else if (/^\d+小时前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('小时前', '')) * 3600000;
     else if (/^\d+分钟前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('分钟前', '')) * 60000;
+    else if (/^\d+秒前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('秒前', '')) * 1000;
     else if ('刚刚' === datetime) return +Date.now();
     else return 0;
   } else {

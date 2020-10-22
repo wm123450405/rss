@@ -5,10 +5,10 @@ window.addEventListener('load', function() {
 
   ipcRenderer.on('hot', (event, data) => {
     if (data.type === 'tags') {
+      document.body.style.height = '0px';
       tags = [];
       document.getElementById('tip').style.display = 'block';
       document.getElementById('other-tags').style.display = 'none';
-      document.body.style.height = '0px';
       let tagContains = document.getElementById('tags');
       tagContains.innerHTML = '';
       let otherTagContains = document.getElementById('other-tags');

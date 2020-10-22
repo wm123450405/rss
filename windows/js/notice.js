@@ -28,6 +28,15 @@ window.addEventListener('load', function() {
         document.body.style.height = size.height + 'px';
         ipcRenderer.send('notice', { type: 'resize', size });
       });
+    } else if (data.type === 'shown') {
+      setTimeout(() => {
+        let size = {
+          height: document.body.scrollHeight,
+          width: document.body.scrollWidth
+        };
+        document.body.style.height = size.height + 'px';
+        ipcRenderer.send('notice', { type: 'fixsize', size });
+      });
     }
   })
   

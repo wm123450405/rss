@@ -47,7 +47,7 @@ class ParserWindow {
         this.window.showInactive();
         this.window.moveTop();
         //animation
-        tween({
+        await tween({
           from: { width: size.width, height: height, x: contains.width - size.width - 8, y: contains.height - height - 8 },
           to: { width: size.width, height: size.height, x: contains.width - size.width - 8, y: contains.height - size.height - 8 },
           duration: 400,
@@ -56,6 +56,11 @@ class ParserWindow {
             this.window.setBounds({ width, height: Math.floor(height), x, y: Math.floor(y) });
           }
         })
+        this.window.webContents.send('parsers', { type: 'shown' });
+      } else if (data.type === 'fixsize') {
+        const size = data.size;
+        const contains = screen.getPrimaryDisplay().workAreaSize;
+        this.window.setBounds({ width: size.width, height: size.height, x: contains.width - size.width - 8, y: contains.height - size.height - 8 });
       } else if (data.type === 'ok') {
         this.window.hide();
         this.selected = data.parsers;

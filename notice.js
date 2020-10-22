@@ -46,7 +46,7 @@ class Notice extends EventEmitter {
         this.window.showInactive();
         this.window.moveTop();
         //animation
-        tween({
+        await tween({
           from: { width: size.width, height: size.height, x: contains.width, y: contains.height - size.height - 8 },
           to: { width: size.width, height: size.height, x: contains.width - size.width - 8, y: contains.height - size.height - 8 },
           duration: 400,
@@ -54,7 +54,12 @@ class Notice extends EventEmitter {
           render: ({ width, height, x, y }) => {
             this.window.setBounds({ width, height, x: Math.floor(x), y });
           }
-        })
+        });
+        this.window.webContents.send('notice', { type: 'shown' });
+      } else if (data.type === 'fixsize') {
+        const size = data.size;
+        const contains = screen.getPrimaryDisplay().workAreaSize;
+        this.window.setBounds({ width: size.width, height: size.height, x: contains.width - size.width - 8, y: contains.height - size.height - 8 });
       } else if (data.type === 'activate') {
         const url = data.url;
         this.window.hide();

@@ -1,5 +1,6 @@
 const nodejieba = require('nodejieba');
 const path = require('path');
+const log = require('electron-log');
 const Enumerable = require('linq-js');
 const config = require('./config');
 const Db = require('./db');
@@ -25,13 +26,29 @@ nodejieba.load({
   stopWordDict: DEFAULT_STOP_WORD_DICT
 })
 
+const formatDateTime = datetime => {
+  if (datetime) {
+    if (Number.isInteger(datetime)) return datetime;
+    else if (/^\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().toDateString() + ' ' +  datetime + ':00').getTime();
+    else if (/^\d{1,2}[-/]\d{1,2} \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().getFullYear() + (datetime.includes('-') ? '-' : '/') + datetime + ':00').getTime();
+    else if (/^(\d{2}|\d{4})[-/]\d{1,2}[-/]\d{1,2} \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime + ':00').getTime();
+    else if (/^\d+小时前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('小时前', '')) * 3600000;
+    else if (/^\d+分钟前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('分钟前', '')) * 60000;
+    else if ('刚刚' === datetime) return +Date.now();
+    else return 0;
+  } else {
+    return 0;
+  }
+}
+
 class Information {
   constructor(url, title, summary, image, datetime) {
     this.url = url;
     this.title = title;
     this.summary = summary;
     this.image = image;
-    this.datetime = datetime || +Date.now();
+    this.datetime = formatDateTime(datetime);
+    if (!this.datetime && datetime) log.warn('错误的时间格式:' + datetime);
     this.tags = this.initTags();
   }
   initTags() {
@@ -90,10 +107,10 @@ class Information {
       return false;
     }
   }
-  static async hotTags(ignores) {
+  static async hotTags(ignores, latest = +Date.now() - 86400000) {
     ignores = ignores || [];
     let informations = (await Information.db.find({
-      m: { $gte: +Date.now() - 86400000 }
+      m: { $gte: latest }
     })).map(Information.from);
     return Enumerable.from(informations)
       .selectMany(info => info.tags)

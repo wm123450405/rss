@@ -75,16 +75,19 @@ class Notice extends EventEmitter {
         } catch(e) {
           this.notices.push(this.current);
         }
+        this.current = false;
         this.delaySend();
       } else if (data.type === 'close') {
         this.window.hide();
         this.shown = false;
         this.emit('uninterset', this.current);
+        this.current = false;
         this.delaySend();
       } else if (data.type === 'read') {
         this.window.hide();
         this.shown = false;
         this.emit('interset', this.current);
+        this.current = false;
         this.delaySend();
       }
     })
@@ -114,9 +117,16 @@ class Notice extends EventEmitter {
       }
     }
   }
-  async pause() {
-    while (this.shown) {
-      await sleep(500);
+  async pause(force = false) {
+    if (force) {
+      if (this.current) {
+        this.notices.unshift(this.current);
+      }
+      this.window.hide();
+    } else {
+      while (this.shown) {
+        await sleep(500);
+      }
     }
     this.shown = true;
   }

@@ -15,6 +15,7 @@ class ParserWindow {
   }
   async init(app) {
     this.app = app;
+    this.shown = false;
     this.window = new BrowserWindow({
       width: 450,
       height: 0,
@@ -58,11 +59,13 @@ class ParserWindow {
       } else if (data.type === 'ok') {
         this.window.hide();
         this.selected = data.parsers;
+        this.shown = false;
       }
     })
     await this.window.loadFile(`windows/parsers.html`);
   }
   async show(parsers) {
+    this.shown = true;
     this.selected = false;
     this.window.setBounds({ height: 0 });
     this.window.webContents.send('parsers', { type: 'parsers', initial, parsers });
@@ -92,8 +95,16 @@ class Parser {
     await Parser.window.init(app);
   }
   static async show(parsers) {
-    parsers = await Parser.window.show(parsers);
+    parsers = await Parser.window.show(parsers.map(parser => parser.code));
     return parsers.map(Parser.auto);
+  }
+  static async wait() {
+    while(this.shown) {
+      await sleep(500);
+    }
+  }
+  static async isShown() {
+    return Parser.window.shown;
   }
   static initStoreage() {
     if (!fs.existsSync(path.join(config.path.dir, config.path.parser))) {
@@ -151,7 +162,7 @@ class DefaultPageParser extends Parser {
   async parse(page) {
     let infos = await page.evaluate(this.parser);
     if (infos) {
-      infos = infos.filter(info => info.url);
+      infos = infos.filter(info => info.url && info.datetime);
       for (let info of infos) {
         if (info.url.startsWith('//')) {
           info.url = (this.url.startsWith('https:') ? 'https' : 'http') + info.url;

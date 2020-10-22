@@ -8,7 +8,7 @@
           "code": "tel.ithome",
           "type": "PAGE",
           "url": "https://www.ithome.com/",
-          "parser": "$('ul.nl li').map(function() {return {title: $(this).children('a').text(), url: $(this).children('a').attr('href'), datetime: $(this).find('b').length ? new Date(new Date().toDateString() + ' ' + $(this).find('b').text().replace(' ', ':')+':00').getTime() : 0}}).toArray().filter(i => i.datetime)",
+          "parser": "$('ul.nl li').map(function() {return {title: $(this).children('a').text(), url: $(this).children('a').attr('href'), datetime: $(this).find('b').text().replace(' ', ':')}}).toArray()",
           "icon": "https://img.ithome.com/www/ithome.logo.svg"
         },
         {
@@ -16,7 +16,7 @@
           "code": "tel.cnbeta",
           "type": "PAGE",
           "url": "https://www.cnbeta.com/",
-          "parser": "$('dl').map(function(){return {title:$(this).children('dt').text(),summary:$(this).children('dd').text(),image:$(this).find('img').attr('data-original'),url:$(this).children('dt').children('a').attr('href'), datetime: $(this).next('.meta-data').find('.status>li').length ? new Date($(this).next('.meta-data').find('.status>li').eq(0).text().substring(3, 19) + ':00').getTime() : 0}}).toArray().filter(i => i.datetime)",
+          "parser": "$('dl').map(function(){return {title:$(this).children('dt').text(),summary:$(this).children('dd').text(),image:$(this).find('img').attr('data-original'),url:$(this).children('dt').children('a').attr('href'), datetime: $(this).next('.meta-data').find('.status>li').eq(0).text().substring(3, 19)}}).toArray()",
           "icon": "https://www.cnbeta.com/images/logo_1.png"
         },
         {
@@ -24,7 +24,7 @@
           "code": "tel.donews",
           "type": "PAGE",
           "url": "https://www.donews.com/",
-          "parser": "$('.left a.news-item').map(function() {return {title:$(this).find('.title').text(), summary:$(this).find('.desc').text(), image:$(this).find('img').attr('src'), url:$(this).attr('href'), datetime: $(this).find('.pub-date').length ? +Date.now() - parseInt($(this).find('.pub-date').find('label').text().replace('小时前', '')) * 3600000 : 0}}).toArray().filter(i => i.datetime)",
+          "parser": "$('.left a.news-item').map(function() {return {title:$(this).find('.title').text(), summary:$(this).find('.desc').text(), image:$(this).find('img').attr('src'), url:$(this).attr('href'), datetime: $(this).find('.pub-date').find('label').text()}}).toArray()",
           "icon": "https://www.donews.com/static/2020824new/images/logo.png"
         }
       ]
@@ -37,8 +37,16 @@
           "code": "tencent",
           "type": "PAGE",
           "url": "https://news.qq.com/",
-          "parser": "$('ul.list li.itme-ls').map(function() { return {title: $(this).find('h3>a').text(), url: $(this).find('h3>a').attr('href'), image: $(this).find('.picture').attr('src'), datetime: $(this).find('.time').length ? +Date.now() - parseInt($(this).find('.time').text().replace('小时前', '')) * 3600000 : 0}}).toArray().filter(i => i.datetime)",
+          "parser": "$('ul.list li.itme-ls').map(function() { return {title: $(this).find('h3>a').text(), url: $(this).find('h3>a').attr('href'), image: $(this).find('.picture').attr('src'), datetime: $(this).find('.time').text()}}).toArray()",
           "icon": "https://mat1.gtimg.com/pingjs/ext2020/newom/build/static/images/new_logo.png"
+        },
+        {
+          "name": "新浪网",
+          "code": "sina",
+          "type": "PAGE",
+          "url": "https://news.sina.com.cn/roll/",
+          "parser": "$('#d_list>ul>li').map(function() { return { title: $(this).find('a').text(), url: $(this).find('a').attr('href'), datetime: $(this).find('.c_time').text() }}).toArray()",
+          "icon": "https://i2.sinaimg.cn/dy/deco/2012/0613/yocc20120613img01/news_logo.png"
         }
       ]
     }

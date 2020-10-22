@@ -127,6 +127,24 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
         tray = new Tray(path.join(__dirname, 'assets/icon/icon.ico'));
         const contextMenu = Menu.buildFromTemplate([
           {
+            label: '配置',
+            click: async () => {
+              log.debug('user settings need updating');
+              contextMenu.items.find(mi => mi.label === '配置').enabled = false;
+              await notice.pause(true);
+              await hot.pause();
+              let saved = await Parser.show(parsers);
+              if (saved.length) {
+                parsers = saved;
+                Parser.save({ parsers });
+                log.debug('user settings need updated');
+              }
+              await hot.resume();
+              await notice.resume();
+              contextMenu.items.find(mi => mi.label === '配置').enabled = true;
+            }
+          },
+          {
             label: '退出',
             click: () => {
               stop = true;
@@ -151,6 +169,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
             matcher.uninterest([ tag.word ], tag.weight / sum);
           }
         })
+        latest = +Date.now() - 86400000;
         for(let tick = 0; !stop; tick++) {
           let added = [];
           log.debug('start geting news');
@@ -164,7 +183,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
                 await page.goto(parser.url);
                 log.info('page loaded: ' + parser.url);
                 if (stop) break;
-                informations = (await parser.parse(page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime));
+                informations = (await parser.parse(page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
                 log.info(informations.length + ' news got from: ' + parser.url);
               } catch(e) {
                 log.error(e);
@@ -183,17 +202,21 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
           log.debug('news got');
           if (tick % 10 == 0) {
             log.debug('check and add hot tags');
-            let tags = await Information.hotTags();
+            let tags = await Information.hotTags([], latest);
             let words = tags.map(tag => tag.word).filter(word => !matcher.includes(word));
             if (words.length > 10) {
               await notice.pause();
+              await Parser.wait();
               let interestingWords = await hot.show(words);
               await notice.resume();
               if (interestingWords.length) {
                 matcher.interest(interestingWords, config.hot.weight.interset);
                 matcher.uninterest(words.slice(0, config.hot.main).filter(word => !interestingWords.includes(word)), config.hot.weight.uninterset.main);
                 matcher.uninterest(words.slice(config.hot.main).filter(word => !interestingWords.includes(word)), config.hot.weight.uninterset.other);
+                latest = +Date.now();
               }
+            } else {
+              latest = +Date.now();
             }
           }
           for (let info of added) {

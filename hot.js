@@ -42,7 +42,6 @@ class Hot {
         const size = data.size;
         const contains = screen.getPrimaryDisplay().workAreaSize;
         const height = this.window.getBounds().height;
-        console.log({ width: size.width, height: height, x: contains.width - size.width - 8, y: contains.height - height - 8 })
         this.window.setBounds({ width: size.width, height: height, x: contains.width - size.width - 8, y: contains.height - height - 8 });
         this.window.showInactive();
         this.window.moveTop();
@@ -80,6 +79,10 @@ class Hot {
       await sleep(500);
     }
     return this.selected;
+  }
+  close() {
+    this.window.hide();
+    this.selected = [];
   }
   restore() {
     const saved = JSON.parse(fs.readFileSync(path.join(config.path.dir, config.path.hot)));

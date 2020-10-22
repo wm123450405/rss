@@ -1,4 +1,5 @@
 const nodejieba = require('nodejieba');
+const path = require('path');
 const Enumerable = require('linq-js');
 const config = require('./config');
 
@@ -10,6 +11,20 @@ const weightMerge = (original, weight, summary = false) => original + (summary ?
 const ignoreWords = [ 'pro', 'mini', 'max' ]
 const ignoreTags = [ 't', 'm', 'q', 'r', 'p', 'c', 'u', 'w', 'a', 'ad', 'd', 'TIME' ]; //时间副词
 const ignoreTag = ({ tag, word }) => ignoreTags.includes(tag) || ignoreWords.includes(word.toLowerCase()) || word.length < 2 || /^[\x00-\xFF]*\d+[\x00-\xFF]*$/ig.test(word);
+
+const DEFAULT_DICT = nodejieba.DEFAULT_DICT.replace(/app\.asar(\\|\/)/ig, 'app.asar.unpacked$1');
+const DEFAULT_HMM_DICT = nodejieba.DEFAULT_HMM_DICT.replace(/app\.asar(\\|\/)/ig, 'app.asar.unpacked$1');
+const DEFAULT_USER_DICT = nodejieba.DEFAULT_USER_DICT.replace(/app\.asar(\\|\/)/ig, 'app.asar.unpacked$1');
+const DEFAULT_IDF_DICT = nodejieba.DEFAULT_IDF_DICT.replace(/app\.asar(\\|\/)/ig, 'app.asar.unpacked$1');
+const DEFAULT_STOP_WORD_DICT = nodejieba.DEFAULT_STOP_WORD_DICT.replace(/app\.asar(\\|\/)/ig, 'app.asar.unpacked$1');
+
+nodejieba.load({
+  dict: DEFAULT_DICT,
+  hmmDict: DEFAULT_HMM_DICT,
+  userDict: DEFAULT_USER_DICT,
+  idfDict: DEFAULT_IDF_DICT,
+  stopWordDict: DEFAULT_STOP_WORD_DICT
+})
 
 class Information {
   constructor(url, title, summary, image) {

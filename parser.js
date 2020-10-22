@@ -7,6 +7,7 @@ const Enumerable = require('linq-js');
 const { BrowserWindow } = require('glasstron');
 const { tween } = require('shifty');
 const { screen, ipcMain } = require("electron");
+const log = require("electron-log");
 
 class ParserWindow {
   constructor() {
@@ -158,7 +159,7 @@ class DefaultPageParser extends Parser {
       }
       return infos;
     } else {
-      console.log('no infos');
+      log.warn('no infos');
       return [];
     }
   }

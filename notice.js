@@ -4,6 +4,7 @@ const { BrowserWindow } = require('glasstron');
 const { tween } = require('shifty');
 const { EventEmitter } = require('events');
 const { execSync } = require("child_process");
+const log = require("electron-log");
 
 class Notice extends EventEmitter {
   constructor(app) {
@@ -60,7 +61,7 @@ class Notice extends EventEmitter {
         this.shown = false;
         this.emit('interset', this.current);
         try {
-          console.log(url);
+          log.info('open: ' + url);
           switch (process.platform) {
             case "darwin":
               execSync('open ' + url);
@@ -102,7 +103,7 @@ class Notice extends EventEmitter {
       if (this.notices.length) {
         this.shown = true;
         this.current = this.notices.shift();
-        console.log('剩余未读:' + this.notices.length);
+        log.info('剩余未读:' + this.notices.length);
         this.window.setBounds({ height: 0 });
         this.window.webContents.send('notice', {
           type: 'message',
@@ -122,6 +123,10 @@ class Notice extends EventEmitter {
   async resume() {
     this.shown = false;
     this.delaySend();
+  }
+  close() {
+    this.window.hide();
+    this.shown = false;
   }
 }
 

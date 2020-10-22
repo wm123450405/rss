@@ -150,7 +150,13 @@ class DefaultPageParser extends Parser {
   async parse(page) {
     let infos = await page.evaluate(this.parser);
     if (infos) {
-      return infos.filter(info => info.url);
+      infos = infos.filter(info => info.url);
+      for (let info of infos) {
+        if (info.url.startsWith('//')) {
+          info.url = (this.url.startsWith('https:') ? 'https' : 'http') + info.url;
+        }
+      }
+      return infos;
     } else {
       console.log('no infos');
       return [];

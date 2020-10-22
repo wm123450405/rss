@@ -37,7 +37,7 @@
           "code": "tencent",
           "type": "PAGE",
           "url": "https://news.qq.com/",
-          "parser": "[]",
+          "parser": "$('ul.list li.itme-ls').map(function() { return {title: $(this).find('h3>a').text(), url: $(this).find('h3>a').attr('href'), image: $(this).find('.picture').attr('src')}}).toArray()",
           "icon": "https://mat1.gtimg.com/pingjs/ext2020/newom/build/static/images/new_logo.png"
         }
       ]

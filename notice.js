@@ -60,9 +60,6 @@ class Notice extends EventEmitter {
         this.shown = false;
         this.emit('interset', this.current);
         try {
-          if (url.startsWith('//')) {
-            url = 'https:' + url;
-          }
           console.log(url);
           switch (process.platform) {
             case "darwin":

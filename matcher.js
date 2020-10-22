@@ -18,7 +18,7 @@ class Matcher extends EventEmitter {
       if (exists) {
         exists.weight = interest(exists.weight, weight);
       } else {
-        this.tags.push({ word, weight: defaultWeight });
+        this.tags.push({ word, weight: interest(defaultWeight, weight) });
       }
     }
     this.emit('changed');

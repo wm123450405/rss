@@ -2,8 +2,7 @@ const nodejieba = require('nodejieba');
 const path = require('path');
 const Enumerable = require('linq-js');
 const config = require('./config');
-
-const informations = [];
+const Db = require('./db');
 
 const titleWeightSplit = 6;
 const summaryWeightSplit = 18;
@@ -27,11 +26,12 @@ nodejieba.load({
 })
 
 class Information {
-  constructor(url, title, summary, image) {
+  constructor(url, title, summary, image, datetime) {
     this.url = url;
     this.title = title;
     this.summary = summary;
     this.image = image;
+    this.datetime = datetime || +Date.now();
     this.tags = this.initTags();
   }
   initTags() {
@@ -63,22 +63,38 @@ class Information {
     }
     return tags;
   }
-  static add(information) {
-    if (!informations.some(i => i.url === information.url)) {
-      informations.push(information);
+  static from(db) {
+    return new Information(db.u, db.t, db.s, db.i, db.m);
+  }
+  static to(information) {
+    return {
+      u: information.url,
+      t: information.title,
+      s: information.summary,
+      i: information.image,
+      m: information.datetime
+    }
+  }
+  static db = false;
+  static async initStorage() {
+    Information.db = await Db.create('informations', [['m', 1], 't', 's', { key: 'u', options: { unique: true } }, 'i'])
+  }
+  static async add(information) {
+    if (await Information.db.findOne({ u: information.url })) {
+      return false;
+    }
+    try {
+      await Information.db.insert(Information.to(information));
       return true;
-    } else {
+    } catch(e) {
       return false;
     }
   }
-  static restore() {
-
-  }
-  static save() {
-
-  }
-  static hotTags(ignores) {
+  static async hotTags(ignores) {
     ignores = ignores || [];
+    let informations = (await Information.db.find({
+      m: { $gte: +Date.now() - 86400000 }
+    })).map(Information.from);
     return Enumerable.from(informations)
       .selectMany(info => info.tags)
       .where(({ word, tag }) => !ignoreTag({ word, tag }) && !ignores.includes(word.toLowerCase()))

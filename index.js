@@ -121,6 +121,8 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
         page.setDefaultTimeout(60000);
         log.debug('chromium page tab started');
       
+        await Information.initStorage();
+
         await sleep(5000);
         tray = new Tray(path.join(__dirname, 'assets/icon/icon.ico'));
         const contextMenu = Menu.buildFromTemplate([
@@ -162,7 +164,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
                 await page.goto(parser.url);
                 log.info('page loaded: ' + parser.url);
                 if (stop) break;
-                informations = (await parser.parse(page)).map(({ url, title, summary, image, time }) => new Information(url, title, summary, image, time));
+                informations = (await parser.parse(page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime));
                 log.info(informations.length + ' news got from: ' + parser.url);
               } catch(e) {
                 log.error(e);
@@ -171,7 +173,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
               
             }
             for (let info of informations) {
-              if (Information.add(info)) {
+              if (await Information.add(info)) {
                 added.push(info);
               }
             }
@@ -181,7 +183,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
           log.debug('news got');
           if (tick % 10 == 0) {
             log.debug('check and add hot tags');
-            let tags = Information.hotTags();
+            let tags = await Information.hotTags();
             let words = tags.map(tag => tag.word).filter(word => !matcher.includes(word));
             if (words.length > 10) {
               await notice.pause();

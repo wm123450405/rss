@@ -38,7 +38,8 @@
     "node-notifier": "^8.0.0",
     "nodejieba": "git+https://gitee.com/wm123450405/nodejieba.git",
     "puppeteer": "^1.20.0",
-    "shifty": "^2.13.0"
+    "shifty": "^2.13.0",
+    "tingodb": "^0.6.1"
   },
   "build": {
     "appId": "smart-rss"

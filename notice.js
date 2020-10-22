@@ -125,6 +125,7 @@ class Notice extends EventEmitter {
     this.delaySend();
   }
   close() {
+    this.notices = [];
     this.window.hide();
     this.shown = false;
   }

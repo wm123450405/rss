@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>select parsers</title>
+  <link rel="stylesheet" href="css/prepare.css">
+  <style>
+    #title {
+      flex: none;
+      color: #fff;
+      padding: 8px;
+    }
+    #progress {
+      width: 96%;
+      background-color: #40474D;
+      height: 5px;
+      overflow: hidden;
+      align-self: center;
+    }
+    #progress-current {
+      background-color: #EEEEEE;
+      height: 5px;
+      overflow: hidden;
+    }
+    #tip {
+      align-self: flex-end;
+    }
+  </style>
+  <script src="js/prepare.js"></script>
+  <script src="js/progress.js"></script>
+</head>
+<body>
+  <div style="display: flex; flex-direction: column;">
+    <h3 id="title"></h3>
+    <div id="progress">
+      <div id="progress-current" style="width: 0%;"></div>
+    </div>
+    <div id="tip" class="tip"></div>
+  </div>
+</body>
+</html>

@@ -5,8 +5,9 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const Parser = require('./parser');
 const Information = require('./information');
-const { sleep, waitForCondition } = require('asyncbox');
 const Notice = require('./notice');
+const Progress = require('./progress');
+const { sleep, waitForCondition } = require('asyncbox');
 const Hot = require('./hot');
 const fs = require('fs');
 const Enumerable = require('linq-js');
@@ -19,8 +20,11 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
   try {
     if (app.requestSingleInstanceLock()) {
       log.debug('start check and download chromium');
-      let downloaded = false, downloadError = false;
-      browserFetcher.download(revision)
+      let downloaded = false, downloadError = false, downloadBytes, totalBytes;
+      browserFetcher.download(revision, (db, tb) => {
+        downloadBytes = db;
+        totalBytes = tb;
+      })
         .then(() => downloaded = true)
         .catch(error => {
           downloaded = true;
@@ -41,6 +45,8 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
       // is necessary to delay the window
       // spawn function.
 
+      const progress = new Progress();
+      await progress.init(app);
       const notice = new Notice();
       await notice.init(app);
       const hot = new Hot();
@@ -58,11 +64,20 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
         log.debug('user settings need inited');
       }
       if (parsers.length) {
-        await waitForCondition(() => downloaded, { waitMs: 3600000 });
+        if (!downloaded) {
+          await progress.show('更新必要组件', '0.00%');
+        }
+        await waitForCondition(async () => {
+          if (totalBytes) {
+            await progress.update(downloadBytes * 100 / totalBytes, downloadBytes !== totalBytes ? (downloadBytes * 100 / totalBytes).toFixed(2) + '%' : '安装中...')
+          }
+          return downloaded;
+        }, { waitMs: 3600000 });
         if (downloadError) {
           log.debug('chromium downloaded with an error');
           throw downloadError;
         } else {
+          progress.close();
           log.debug('chromium success downloaded');
         }
   

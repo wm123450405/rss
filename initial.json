@@ -55,6 +55,14 @@
           "url": "https://news.163.com/",
           "parser": "[...document.querySelectorAll('.ndi_main')[0].querySelectorAll('.news_article')].map(el => ({ title: el.querySelector('.news_title a').textContent, url: el.querySelector('a').href, image: el.querySelector('img').src, datetime: el.querySelector('.time').textContent }))",
           "icon": "https://static.ws.126.net/f2e/news/res/channel_logo_new/news.png"
+        },
+        {
+          "name": "中国新闻网",
+          "code": "chinanews",
+          "type": "PAGE",
+          "url": "http://www.chinanews.com/scroll-news/news1.html",
+          "parser": "$('.content_list>ul>li').not('.nocontent').map(function() { return { title: $(this).find('a').text(), url: $(this).find('a').attr('href'), datetime: $(this).find('.dd_time').text() }}).toArray()",
+          "icon": "http://i8.chinanews.com/2013/home/images/logo.jpg"
         }
       ]
     }

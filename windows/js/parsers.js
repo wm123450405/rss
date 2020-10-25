@@ -24,7 +24,7 @@ window.addEventListener('load', function() {
           let tagDiv = document.createElement('div');
           tagDiv.className = parsers.includes(parser.code) ? 'tag selected' : 'tag';
           let tagImage = new Image();
-          tagImage.src = parser.icon + '?t=' + Date.now();
+          tagImage.src = parser.icon;
           allPromise.push(new Promise((reslove, reject) => {
             tagImage.addEventListener('load', () => {
               reslove();

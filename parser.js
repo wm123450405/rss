@@ -17,7 +17,7 @@ class ParserWindow {
     this.app = app;
     this.shown = false;
     this.window = new BrowserWindow({
-      width: 450,
+      width: 600,
       height: 0,
       minimizable: false,
       maximizable: false,

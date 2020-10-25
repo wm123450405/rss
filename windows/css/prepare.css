@@ -1,4 +1,4 @@
-* { padding: 0; margin: 0; }
+* { padding: 0; margin: 0; user-select: none; }
 body { background-color: #0063B1CC; width: 450px; overflow: hidden; }
 
 .tag {

@@ -2,11 +2,10 @@ const { ipcRenderer } = nodeRequire('electron');
 
 window.addEventListener('load', function() {
   let parsers = [];
-  let shown = false;
 
   ipcRenderer.on('parsers', (event, data) => {
     if (data.type === 'parsers') {
-      shown = false;
+      let allPromise = [];
       document.body.style.height = '0px';
       parsers = data.parsers;
       const classifyContains = document.getElementById('classify');
@@ -25,19 +24,15 @@ window.addEventListener('load', function() {
           let tagDiv = document.createElement('div');
           tagDiv.className = parsers.includes(parser.code) ? 'tag selected' : 'tag';
           let tagImage = new Image();
-          tagImage.src = parser.icon;
-          tagImage.onload = () => {
-            if (shown) {
-              setTimeout(() => {
-                let size = {
-                  height: document.body.scrollHeight,
-                  width: document.body.scrollWidth
-                };
-                document.body.style.height = size.height + 'px';
-                ipcRenderer.send('parsers', { type: 'fixsize', size });
-              });
-            }
-          }
+          tagImage.src = parser.icon + '?t=' + Date.now();
+          allPromise.push(new Promise((reslove, reject) => {
+            tagImage.addEventListener('load', () => {
+              reslove();
+            })
+            tagImage.addEventListener('error', () => {
+              reslove();
+            })
+          }));
           tagDiv.appendChild(tagImage);
           let tagSpan = document.createElement('span');
           tagSpan.innerHTML = parser.name;
@@ -57,16 +52,28 @@ window.addEventListener('load', function() {
         classifyContains.appendChild(classifyDiv);
       }
       document.getElementById('ok').className = parsers.length ? 'btn' : 'btn disabled'
-      setTimeout(() => {
-        let size = {
-          height: document.body.scrollHeight,
-          width: document.body.scrollWidth
-        };
-        document.body.style.height = size.height + 'px';
-        ipcRenderer.send('parsers', { type: 'resize', size });
-      });
+      if (allPromise.length) {
+        Promise.all(allPromise).then(() => {
+          setTimeout(() => {
+            let size = {
+              height: document.body.scrollHeight,
+              width: document.body.scrollWidth
+            };
+            document.body.style.height = size.height + 'px';
+            ipcRenderer.send('parsers', { type: 'resize', size });
+          });
+        })
+      } else {
+        setTimeout(() => {
+          let size = {
+            height: document.body.scrollHeight,
+            width: document.body.scrollWidth
+          };
+          document.body.style.height = size.height + 'px';
+          ipcRenderer.send('parsers', { type: 'resize', size });
+        });
+      }
     } else if (data.type === 'shown') {
-      shown = true;
       document.body.style.height = '0px';
       setTimeout(() => {
         let size = {

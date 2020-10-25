@@ -2,9 +2,11 @@ const { ipcRenderer } = nodeRequire('electron');
 
 window.addEventListener('load', function() {
   let parsers = [];
+  let shown = false;
 
   ipcRenderer.on('parsers', (event, data) => {
     if (data.type === 'parsers') {
+      shown = false;
       document.body.style.height = '0px';
       parsers = data.parsers;
       const classifyContains = document.getElementById('classify');
@@ -24,6 +26,18 @@ window.addEventListener('load', function() {
           tagDiv.className = parsers.includes(parser.code) ? 'tag selected' : 'tag';
           let tagImage = new Image();
           tagImage.src = parser.icon;
+          tagImage.onload = () => {
+            if (shown) {
+              setTimeout(() => {
+                let size = {
+                  height: document.body.scrollHeight,
+                  width: document.body.scrollWidth
+                };
+                document.body.style.height = size.height + 'px';
+                ipcRenderer.send('parsers', { type: 'fixsize', size });
+              });
+            }
+          }
           tagDiv.appendChild(tagImage);
           let tagSpan = document.createElement('span');
           tagSpan.innerHTML = parser.name;
@@ -52,6 +66,8 @@ window.addEventListener('load', function() {
         ipcRenderer.send('parsers', { type: 'resize', size });
       });
     } else if (data.type === 'shown') {
+      shown = true;
+      document.body.style.height = '0px';
       setTimeout(() => {
         let size = {
           height: document.body.scrollHeight,

@@ -2,9 +2,11 @@ const { ipcRenderer } = nodeRequire('electron');
 
 window.addEventListener('load', function() {
   let url = '';
+  let shown = false;
 
   ipcRenderer.on('notice', (event, data) => {
     if (data.type === 'message') {
+      shown = false;
       document.body.style.height = '0px';
       if (data.data.image) {
         document.getElementById('image').src = data.data.image;
@@ -29,6 +31,8 @@ window.addEventListener('load', function() {
         ipcRenderer.send('notice', { type: 'resize', size });
       });
     } else if (data.type === 'shown') {
+      shown = true;
+      document.body.style.height = '0px';
       setTimeout(() => {
         let size = {
           height: document.body.scrollHeight,
@@ -42,6 +46,19 @@ window.addEventListener('load', function() {
   
   document.documentElement.addEventListener('click', () => {
     ipcRenderer.send('notice', { type: 'activate', url });
+  })
+
+  document.getElementById('image').addEventListener('load', () => {
+    if (shown) {
+      setTimeout(() => {
+        let size = {
+          height: document.body.scrollHeight,
+          width: document.body.scrollWidth
+        };
+        document.body.style.height = size.height + 'px';
+        ipcRenderer.send('notice', { type: 'fixsize', size });
+      });
+    }
   })
 
   document.getElementById('close').addEventListener('click', event => {

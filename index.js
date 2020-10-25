@@ -36,6 +36,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
 
       log.debug('application starting');
       app.commandLine.appendSwitch("enable-transparent-visuals");
+      app.commandLine.appendSwitch("disable-http-cache");
       await app.whenReady();
       await sleep(1000);
       log.debug('application started');

@@ -53,7 +53,7 @@
           "code": "163",
           "type": "PAGE",
           "url": "https://news.163.com/",
-          "parser": "[...document.querySelectorAll('.ndi_main')[0].querySelectorAll('.news_article')].map(el => ({ title: el.querySelector('.news_title a').textContent, url: el.querySelector('a').href, image: el.querySelector('img').src, datetime: el.querySelector('.time').textContent }))",
+          "parser": "[...document.querySelectorAll('.ndi_main')[0].querySelectorAll('.news_article')].map(el => ({ title: el.querySelector('.news_title a').textContent, url: el.querySelector('a').href, image: el.querySelector('img').src, datetime: el.querySelector('.time') })).filter(i => i.datetime).map(({ title, url, image, datetime }) => ({ title, url, image, datetime: datetime.textContent }))",
           "icon": "https://static.ws.126.net/f2e/news/res/channel_logo_new/news.png"
         },
         {

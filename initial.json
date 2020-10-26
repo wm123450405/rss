@@ -36,9 +36,46 @@
           "name": "汽车之家",
           "code": "trans.autohome",
           "type": "PAGE",
-          "url": "https://www.autohome.com.cn/all/",
+          "url": "http://www.autohome.com.cn/all/",
           "parser": "$('ul.article>li').not('.union-ad-placeholder').map(function() { return { title: $(this).find('h3').text(), summary: $(this).find('p').text(), url: $(this).find('a').attr('href'), image: $(this).find('img').attr('src'), datetime: $(this).find('.fn-left').text() }}).toArray()",
-          "icon": "https:////x.autoimg.cn/www/common/images/logo_slogan_beta_01.png"
+          "icon": "http:////x.autoimg.cn/www/common/images/logo_slogan_beta_01.png"
+        }
+      ]
+    },
+    {
+      "name": "娱乐八卦",
+      "parsers": [
+        {
+          "name": "新浪娱乐",
+          "code": "ent.sina",
+          "type": "PAGE",
+          "url": "https://ent.sina.com.cn/rollnews.shtml",
+          "parser": "$('.d_list_txt>ul>li').map(function() { return { title: $(this).find('.c_tit').text(), url: $(this).find('a').attr('href'), datetime: $(this).find('.c_time').text() }}).toArray()",
+          "icon": "https://i1.sinaimg.cn/dy/images/header/2009/standardl2nav_ent.gif"
+        },
+        {
+          "name": "中娱网",
+          "code": "ent.yule",
+          "type": "PAGE",
+          "url": "http://news.yule.com.cn/neidi/",
+          "parser": "$('.MBL>ul>li').map(function() { return { title: $(this).find('.titname>a').text().trim(), summary: $(this).find('.introduce').text().trim(), image: $(this).find('img').attr('src'), url: $(this).find('a').attr('href'), datetime: $(this).find('#time').text().trim() }}).toArray()",
+          "icon": "http://c.yule.com.cn/images/yule_logo_175_50.gif"
+        },
+        {
+          "name": "大众娱乐网",
+          "code": "ent.dzyule",
+          "type": "PAGE",
+          "url": "http://news.dzyule.com/nd/",
+          "parser": "$('.new_box>ul>li').map(function() { return { title: $(this).find('.eTit>a').text(), summary: $(this).find('.sDes').text().replace(/查看全文>>$/, ''), image: $(this).find('img').attr('src'), url: $(this).find('a').attr('href'), datetime: $(this).find('.eTime').text() }}).toArray()",
+          "icon": "http://www.dzyule.com//statics/2015/images/logo.jpg"
+        },
+        {
+          "name": "看点网",
+          "code": "ent.zlook",
+          "type": "PAGE",
+          "url": "http://news.zlook.com/dianying/",
+          "parser": "$('.listareaL>ul>li').map(function() { return { title: $(this).find('h1>a').text(), summary: $(this).find('p').text().trim(), image: $(this).find('img').attr('src'), url: $(this).find('a').attr('href'), datetime: $(this).find('.f1').text().replace(/\\s*更新/, '') }}).toArray()",
+          "icon": "http://www.zlook.com/statics/images/logo.gif"
         }
       ]
     },

@@ -69,10 +69,10 @@ class Notice extends EventEmitter {
           log.info('open: ' + url);
           switch (process.platform) {
             case "darwin":
-              execSync('open "' + url + '"');
+              execSync('open ' + url);
               break;
             case "win32":
-              execSync('start "' + url + '"');
+              execSync('start ' + url);
               break;
             default:
               execSync('xdg-open', [url]);

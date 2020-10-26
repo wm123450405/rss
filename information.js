@@ -31,7 +31,9 @@ const formatDateTime = datetime => {
     if (Number.isInteger(datetime)) return datetime;
     else if (/^\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().toDateString() + ' ' +  datetime + ':00').getTime();
     else if (/^\d{1,2}[-/]\d{1,2} \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().getFullYear() + (datetime.includes('-') ? '-' : '/') + datetime + ':00').getTime();
+    else if (/^(\d{2}|\d{4})[-/]\d{1,2}[-/]\d{1,2}$/ig.test(datetime)) return new Date(datetime + ' 00:00:00').getTime();
     else if (/^(\d{2}|\d{4})[-/]\d{1,2}[-/]\d{1,2} \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime + ':00').getTime();
+    else if (/^(\d{2}|\d{4})[-/]\d{1,2}[-/]\d{1,2} \d{1,2}:\d{2}:\d{2}$/ig.test(datetime)) return new Date(datetime).getTime();
     else if (/^\d+天前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('天前', '')) * 86400000;
     else if (/^\d+小时前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('小时前', '')) * 3600000;
     else if (/^\d+分钟前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('分钟前', '')) * 60000;

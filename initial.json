@@ -49,9 +49,9 @@
           "name": "新浪娱乐",
           "code": "ent.sina",
           "type": "PAGE",
-          "url": "https://ent.sina.com.cn/rollnews.shtml",
+          "url": "http://ent.sina.com.cn/rollnews.shtml",
           "parser": "$('.d_list_txt>ul>li').map(function() { return { title: $(this).find('.c_tit').text(), url: $(this).find('a').attr('href'), datetime: $(this).find('.c_time').text() }}).toArray()",
-          "icon": "https://i1.sinaimg.cn/dy/images/header/2009/standardl2nav_ent.gif"
+          "icon": "http://i1.sinaimg.cn/dy/images/header/2009/standardl2nav_ent.gif"
         },
         {
           "name": "中娱网",

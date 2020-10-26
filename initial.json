@@ -30,6 +30,19 @@
       ]
     },
     {
+      "name": "交通工具",
+      "parsers": [
+        {
+          "name": "汽车之家",
+          "code": "trans.autohome",
+          "type": "PAGE",
+          "url": "https://www.autohome.com.cn/all/",
+          "parser": "$('ul.article>li').not('.union-ad-placeholder').map(function() { return { title: $(this).find('h3').text(), summary: $(this).find('p').text(), url: $(this).find('a').attr('href'), image: $(this).find('img').attr('src'), datetime: $(this).find('.fn-left').text() }}).toArray()",
+          "icon": "https:////x.autoimg.cn/www/common/images/logo_slogan_beta_01.png"
+        }
+      ]
+    },
+    {
       "name": "综合",
       "parsers": [
         {

@@ -142,6 +142,17 @@ class Parser {
         return false;
     }
   }
+  static factories = [
+    new DiscuzParserFactory()
+  ];
+  static async match(page, url) {
+    for (let factory of Parser.factories) {
+      if (await factory.match(page)) {
+        return await factory.create(page, url);
+      }
+    }
+    return false;
+  }
 }
 
 class DefaultAjaxParser extends Parser {
@@ -181,6 +192,34 @@ class DefaultPageParser extends Parser {
       log.warn('no infos');
       return [];
     }
+  }
+}
+
+class DiscuzParser extends DefaultPageParser {
+  constructor(code, name, url, icon) {
+    super({
+      code, name, url, icon,
+      parser: `[...document.querySelectorAll('#threadlisttableid tr')].filter(tr => tr.querySelector('.common a.s')).map(tr => ({ url: tr.querySelector('.common a.s').href, title: tr.querySelector('.common a.s').textContent, datetime: tr.querySelector('.num+.by em').textContent }))`
+    });
+  }
+}
+
+class ParserFactory {
+  async match(page) {
+    return false;
+  }
+  async create(page, url) {
+    return false;
+  }
+}
+
+class DiscuzParserFactory extends ParserFactory {
+  async match(page) {
+    return await page.evaluate(`document.head.querySelector('meta[name=generator]')&&document.head.querySelector('meta[name=generator]').content.startsWith('Discuz!')||!!document.getElementById('discuz_tips')`);
+  }
+  async create(page, url) {
+    let info = await page.evaluate(`{ name: document.head.querySelector('meta[name=application-name]')&&document.head.querySelector('meta[name=application-name]').content||document.title, icon: document.querySelector('#hd h2 img').src, code: window.location.host }`);
+    return new DiscuzParser(info.code, info.name, url, info.icon);
   }
 }
 

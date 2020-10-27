@@ -170,7 +170,10 @@ class DefaultPageParser extends Parser {
       infos = infos.filter(info => info.url && info.datetime);
       for (let info of infos) {
         if (info.url.startsWith('//')) {
-          info.url = (this.url.startsWith('https:') ? 'https' : 'http') + info.url;
+          info.url = (this.url.startsWith('https:') ? 'https:' : 'http:') + info.url;
+        }
+        if (info.image.startsWith('//')) {
+          info.image = (this.url.startsWith('https:') ? 'https:' : 'http:') + info.image;
         }
       }
       return infos;

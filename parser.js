@@ -196,9 +196,10 @@ class DefaultPageParser extends Parser {
 }
 
 class DiscuzParser extends DefaultPageParser {
-  constructor(code, name, url, icon) {
+  constructor(name, url, icon) {
     super({
-      code, name, url, icon,
+      name, url, icon,
+      code: url,
       parser: `[...document.querySelectorAll('#threadlisttableid tr')].filter(tr => tr.querySelector('.common a.s')).map(tr => ({ url: tr.querySelector('.common a.s').href, title: tr.querySelector('.common a.s').textContent, datetime: tr.querySelector('.num+.by em').textContent }))`
     });
   }
@@ -218,8 +219,31 @@ class DiscuzParserFactory extends ParserFactory {
     return await page.evaluate(`document.head.querySelector('meta[name=generator]')&&document.head.querySelector('meta[name=generator]').content.startsWith('Discuz!')||!!document.getElementById('discuz_tips')`);
   }
   async create(page, url) {
-    let info = await page.evaluate(`{ name: document.head.querySelector('meta[name=application-name]')&&document.head.querySelector('meta[name=application-name]').content||document.title, icon: document.querySelector('#hd h2 img').src, code: window.location.host }`);
-    return new DiscuzParser(info.code, info.name, url, info.icon);
+    let info = await page.evaluate(`{ name: document.head.querySelector('meta[name=application-name]')&&document.head.querySelector('meta[name=application-name]').content||document.title, icon: document.querySelector('#hd h2 img').src }`);
+    return new DiscuzParser(info.name, url, info.icon);
+  }
+}
+
+class SearchParser extends DefaultPageParser {
+  constructor(url, code, name, icon, parser) {
+    super({ code, name, url, icon, parser })
+  }
+  static parsers(keyword) {
+    return [
+      new BaiduSearchParser(keyword)
+    ];
+  }
+}
+
+class BaiduSearchParser extends SearchParser {
+  constructor(keyword) {
+    super(
+      `https://www.baidu.com/s?tn=news&rtt=4&bsst=1&cl=2&medium=0&wd=${ keyword }`,
+      `baidu.${keyword}`,
+      `百度-${keyword}`,
+      `https://www.baidu.com/img/flexible/logo/pc/result.png`,
+      `$('.result-op.new-pmd').map(function() { return { title: $(this).find('a').text(), summary: $(this).find('.c-span-last>.c-font-normal').text(), image: $(this).find('img').attr('src'), url: $(this).find('a').attr('href'), datetime: $(this).find('.news-source>.c-color-gray2').text() }}).toArray()`
+    );
   }
 }
 

@@ -63,17 +63,18 @@ class ParserWindow {
         this.window.setBounds({ width: size.width, height: size.height, x: contains.width - size.width - 8, y: contains.height - size.height - 8 });
       } else if (data.type === 'ok') {
         this.window.hide();
-        this.selected = data.parsers;
+        let { parsers, search } = data;
+        this.selected = { parsers, search };
         this.shown = false;
       }
     })
     await this.window.loadFile(`windows/parsers.html`);
   }
-  async show(parsers) {
+  async show({ parsers, search }) {
     this.shown = true;
     this.selected = false;
     this.window.setBounds({ height: 0 });
-    this.window.webContents.send('parsers', { type: 'parsers', initial, parsers });
+    this.window.webContents.send('parsers', { type: 'parsers', initial, parsers, search });
     while (!this.selected) {
       await sleep(500);
     }
@@ -99,9 +100,13 @@ class Parser {
     Parser.initStoreage();
     await Parser.window.init(app);
   }
-  static async show(parsers) {
-    parsers = await Parser.window.show(parsers.map(parser => parser.code));
-    return parsers.map(Parser.auto);
+  static async show({ parsers, search }) {
+    ({ parsers, search } = await Parser.window.show({
+      search,
+      parsers : parsers.map(parser => parser.code)
+    }));
+    parsers = parsers.map(Parser.auto);
+    return { parsers, search };
   }
   static async wait() {
     while(this.shown) {
@@ -142,9 +147,7 @@ class Parser {
         return false;
     }
   }
-  static factories = [
-    new DiscuzParserFactory()
-  ];
+  static factories = [];
   static async match(page, url) {
     for (let factory of Parser.factories) {
       if (await factory.match(page)) {
@@ -152,6 +155,9 @@ class Parser {
       }
     }
     return false;
+  }
+  static search(keyword) {
+    return SearchParser.parsers(keyword);
   }
 }
 
@@ -183,7 +189,7 @@ class DefaultPageParser extends Parser {
         if (info.url.startsWith('//')) {
           info.url = (this.url.startsWith('https:') ? 'https:' : 'http:') + info.url;
         }
-        if (info.image.startsWith('//')) {
+        if (info.image && info.image.startsWith('//')) {
           info.image = (this.url.startsWith('https:') ? 'https:' : 'http:') + info.image;
         }
       }
@@ -206,6 +212,9 @@ class DiscuzParser extends DefaultPageParser {
 }
 
 class ParserFactory {
+  constructor() {
+
+  }
   async match(page) {
     return false;
   }
@@ -215,6 +224,9 @@ class ParserFactory {
 }
 
 class DiscuzParserFactory extends ParserFactory {
+  constructor() {
+    super();
+  }
   async match(page) {
     return await page.evaluate(`document.head.querySelector('meta[name=generator]')&&document.head.querySelector('meta[name=generator]').content.startsWith('Discuz!')||!!document.getElementById('discuz_tips')`);
   }
@@ -242,7 +254,7 @@ class BaiduSearchParser extends SearchParser {
       `baidu.${keyword}`,
       `百度-${keyword}`,
       `https://www.baidu.com/img/flexible/logo/pc/result.png`,
-      `$('.result-op.new-pmd').map(function() { return { title: $(this).find('a').text(), summary: $(this).find('.c-span-last>.c-font-normal').text(), image: $(this).find('img').attr('src'), url: $(this).find('a').attr('href'), datetime: $(this).find('.news-source>.c-color-gray2').text() }}).toArray()`
+      `$('.result-op.new-pmd').map(function() { return { title: $(this).find('a.news-title-font_1xS-F').text(), summary: $(this).find('.c-span-last>.c-font-normal').text(), image: $(this).find('img').attr('src'), url: $(this).find('a').attr('href'), datetime: $(this).find('.news-source>.c-color-gray2').text() }}).toArray()`
     );
   }
 }
@@ -254,5 +266,9 @@ Parser.Types = {
   RSS: 'RSS',
   XML: 'XML'
 }
+
+Parser.factories = [
+  new DiscuzParserFactory()
+];
 
 module.exports = Parser;

@@ -54,14 +54,14 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
       await hot.init(app);
       await Parser.init(app);
       log.debug('user settings restoring');
-      let { parsers } = Parser.restore();
+      let { parsers, search } = Parser.restore();
       let { matcher } = hot.restore();
       log.debug('user settings restored');
 
       if (!parsers.length) {
         log.debug('user settings need init');
-        parsers = await Parser.show(parsers);
-        Parser.save({ parsers });
+        ({ parsers, search } = await Parser.show({ parsers, search }));
+        Parser.save({ parsers, search });
         log.debug('user settings need inited');
       }
       if (parsers.length) {
@@ -134,12 +134,8 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
               contextMenu.items.find(mi => mi.label === '配置').enabled = false;
               await notice.pause(true);
               await hot.pause();
-              let saved = await Parser.show(parsers);
-              if (saved.length) {
-                parsers = saved;
-                Parser.save({ parsers });
-                log.debug('user settings need updated');
-              }
+              ({ parsers, search } = await Parser.show({ parsers, search }));
+              Parser.save({ parsers, search });
               await hot.resume();
               await notice.resume();
               contextMenu.items.find(mi => mi.label === '配置').enabled = true;
@@ -199,6 +195,37 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
             }
             log.debug('news got from ' + parser.name);
           }
+          if (search) {
+            for (let word of matcher.search()) {
+              if (stop) break;
+              log.debug('start search news of keyword:' + word);
+              for (let parser of Parser.search(word)) {
+                if (stop) break;
+                log.debug('start search news from:' + parser.name);
+                let informations = [];
+                if (parser.type === Parser.Types.PAGE) {
+                  try {
+                    log.info('page loading: ' + parser.url);
+                    await page.goto(parser.url);
+                    log.info('page loaded: ' + parser.url);
+                    if (stop) break;
+                    informations = (await parser.parse(page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
+                    log.info(informations.length + ' news searched from: ' + parser.url);
+                  } catch(e) {
+                    log.error(e);
+                  }
+                } else if (parser.type === Parser.Types.AJAX) {
+                  
+                }
+                for (let info of informations) {
+                  if (await Information.add(info)) {
+                    added.push(info);
+                  }
+                }
+                log.debug('news searched from ' + parser.name);
+              }
+            }
+          }
           if (stop) break;
           log.debug('news got');
           if (tick % 10 == 0) {
@@ -221,7 +248,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
             }
           }
           for (let info of added) {
-            if (matcher.match(info)) {
+            if (info.datetime >= +Date.now() - 86400000 && matcher.match(info)) {
               notice.send(info);
             }
           }

@@ -2,12 +2,14 @@ const { ipcRenderer } = nodeRequire('electron');
 
 window.addEventListener('load', function() {
   let parsers = [];
+  let search = false;
 
   ipcRenderer.on('parsers', (event, data) => {
     if (data.type === 'parsers') {
       let allPromise = [];
       document.body.style.height = '0px';
-      parsers = data.parsers;
+      parsers = data.parsers || [];
+      search = data.search || false;
       const classifyContains = document.getElementById('classify');
       classifyContains.innerHTML = '';
       for (let classify of data.initial.parsers) {
@@ -51,6 +53,7 @@ window.addEventListener('load', function() {
         }
         classifyContains.appendChild(classifyDiv);
       }
+      document.getElementById('search').checked = search;
       document.getElementById('ok').className = parsers.length ? 'btn' : 'btn disabled'
       if (allPromise.length) {
         Promise.all(allPromise).then(() => {
@@ -86,9 +89,13 @@ window.addEventListener('load', function() {
     }
   });
 
+  document.getElementById('search').addEventListener('change', event => {
+    search = document.getElementById('search').checked || false;
+  })
+
   document.getElementById('ok').addEventListener('click', event => {
     if (parsers.length) {
-      ipcRenderer.send('parsers', { type: 'ok', parsers });
+      ipcRenderer.send('parsers', { type: 'ok', parsers, search });
     }
     event.stopPropagation();
   })

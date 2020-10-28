@@ -5,7 +5,7 @@ const defaultWeight = 100;
 const interest = (original, weight = 1) => original * (1 + 0.1 * weight);
 const uninterest = (original, weight = 1) => original * (1 - 0.1 * weight);
 const match = (original, weight) => original * weight;
-const thresholds = { max: 120, min: 50, line: 105 };
+const thresholds = { max: 120, min: 50, line: 105, search: 80 };
 
 class Matcher extends EventEmitter {
   constructor(tags) {
@@ -43,6 +43,9 @@ class Matcher extends EventEmitter {
   }
   includes(word) {
     return this.tags.some(tag => (tag.weight <= thresholds.min || tag.weight >= thresholds.max) && tag.word === word);
+  }
+  search() {
+    return this.tags.filter(tag => tag.weight > thresholds.line).map(tag => tag.word);
   }
   empty() {
     return this.tags.length === 0;

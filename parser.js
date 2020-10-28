@@ -201,6 +201,18 @@ class DefaultPageParser extends Parser {
   }
 }
 
+class ParserFactory {
+  constructor() {
+
+  }
+  async match(page, url) {
+    return false;
+  }
+  async create(page, url) {
+    return false;
+  }
+}
+
 class DiscuzParser extends DefaultPageParser {
   constructor(name, url, icon) {
     super({
@@ -211,23 +223,11 @@ class DiscuzParser extends DefaultPageParser {
   }
 }
 
-class ParserFactory {
-  constructor() {
-
-  }
-  async match(page) {
-    return false;
-  }
-  async create(page, url) {
-    return false;
-  }
-}
-
 class DiscuzParserFactory extends ParserFactory {
   constructor() {
     super();
   }
-  async match(page) {
+  async match(page, url) {
     return await page.evaluate(`document.head.querySelector('meta[name=generator]')&&document.head.querySelector('meta[name=generator]').content.startsWith('Discuz!')||!!document.getElementById('discuz_tips')`);
   }
   async create(page, url) {

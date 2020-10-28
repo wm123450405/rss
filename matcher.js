@@ -5,7 +5,7 @@ const defaultWeight = 100;
 const interest = (original, weight = 1) => original * (1 + 0.1 * weight);
 const uninterest = (original, weight = 1) => original * (1 - 0.1 * weight);
 const match = (original, weight) => original * weight;
-const thresholds = { max: 120, min: 50, line: 105, search: 80 };
+const thresholds = { max: 120, min: 50, line: 105, search: 125 };
 
 class Matcher extends EventEmitter {
   constructor(tags) {

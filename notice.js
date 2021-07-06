@@ -72,7 +72,7 @@ class Notice extends EventEmitter {
               execSync('open ' + url);
               break;
             case "win32":
-              execSync('start ' + url);
+              execSync('start "" "' + url + '"');
               break;
             default:
               execSync('xdg-open', [url]);

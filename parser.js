@@ -63,17 +63,18 @@ class ParserWindow {
         this.window.setBounds({ width: size.width, height: size.height, x: contains.width - size.width - 8, y: contains.height - size.height - 8 });
       } else if (data.type === 'ok') {
         this.window.hide();
-        this.selected = data.parsers;
+        let { parsers, search } = data;
+        this.selected = { parsers, search };
         this.shown = false;
       }
     })
     await this.window.loadFile(`windows/parsers.html`);
   }
-  async show(parsers) {
+  async show({ parsers, search }) {
     this.shown = true;
     this.selected = false;
     this.window.setBounds({ height: 0 });
-    this.window.webContents.send('parsers', { type: 'parsers', initial, parsers });
+    this.window.webContents.send('parsers', { type: 'parsers', initial, parsers, search });
     while (!this.selected) {
       await sleep(500);
     }
@@ -99,9 +100,13 @@ class Parser {
     Parser.initStoreage();
     await Parser.window.init(app);
   }
-  static async show(parsers) {
-    parsers = await Parser.window.show(parsers.map(parser => parser.code));
-    return parsers.map(Parser.auto);
+  static async show({ parsers, search }) {
+    ({ parsers, search } = await Parser.window.show({
+      search,
+      parsers : parsers.map(parser => parser.code)
+    }));
+    parsers = parsers.map(Parser.auto);
+    return { parsers, search };
   }
   static async wait() {
     while(Parser.window.shown) {
@@ -142,6 +147,18 @@ class Parser {
         return false;
     }
   }
+  static factories = [];
+  static async match(page, url) {
+    for (let factory of Parser.factories) {
+      if (await factory.match(page)) {
+        return await factory.create(page, url);
+      }
+    }
+    return false;
+  }
+  static search(keyword) {
+    return SearchParser.parsers(keyword);
+  }
 }
 
 class DefaultAjaxParser extends Parser {
@@ -170,7 +187,10 @@ class DefaultPageParser extends Parser {
       infos = infos.filter(info => info.url && info.datetime);
       for (let info of infos) {
         if (info.url.startsWith('//')) {
-          info.url = (this.url.startsWith('https:') ? 'https' : 'http') + info.url;
+          info.url = (this.url.startsWith('https:') ? 'https:' : 'http:') + info.url;
+        }
+        if (info.image && info.image.startsWith('//')) {
+          info.image = (this.url.startsWith('https:') ? 'https:' : 'http:') + info.image;
         }
       }
       return infos;
@@ -181,6 +201,64 @@ class DefaultPageParser extends Parser {
   }
 }
 
+class ParserFactory {
+  constructor() {
+
+  }
+  async match(page, url) {
+    return false;
+  }
+  async create(page, url) {
+    return false;
+  }
+}
+
+class DiscuzParser extends DefaultPageParser {
+  constructor(name, url, icon) {
+    super({
+      name, url, icon,
+      code: url,
+      parser: `[...document.querySelectorAll('#threadlisttableid tr')].filter(tr => tr.querySelector('.common a.s')).map(tr => ({ url: tr.querySelector('.common a.s').href, title: tr.querySelector('.common a.s').textContent, datetime: tr.querySelector('.num+.by em').textContent }))`
+    });
+  }
+}
+
+class DiscuzParserFactory extends ParserFactory {
+  constructor() {
+    super();
+  }
+  async match(page, url) {
+    return await page.evaluate(`document.head.querySelector('meta[name=generator]')&&document.head.querySelector('meta[name=generator]').content.startsWith('Discuz!')||!!document.getElementById('discuz_tips')`);
+  }
+  async create(page, url) {
+    let info = await page.evaluate(`{ name: document.head.querySelector('meta[name=application-name]')&&document.head.querySelector('meta[name=application-name]').content||document.title, icon: document.querySelector('#hd h2 img').src }`);
+    return new DiscuzParser(info.name, url, info.icon);
+  }
+}
+
+class SearchParser extends DefaultPageParser {
+  constructor(url, code, name, icon, parser) {
+    super({ code, name, url, icon, parser })
+  }
+  static parsers(keyword) {
+    return [
+      new BaiduSearchParser(keyword)
+    ];
+  }
+}
+
+class BaiduSearchParser extends SearchParser {
+  constructor(keyword) {
+    super(
+      `https://www.baidu.com/s?tn=news&rtt=4&bsst=1&cl=2&medium=0&wd=${ keyword }`,
+      `baidu.${keyword}`,
+      `百度-${keyword}`,
+      `https://www.baidu.com/img/flexible/logo/pc/result.png`,
+      `$('.result-op.new-pmd').map(function() { return { title: $(this).find('a.news-title-font_1xS-F').text(), summary: $(this).find('.c-span-last>.c-font-normal').text(), image: $(this).find('img').attr('src'), url: $(this).find('a').attr('href'), datetime: $(this).find('.news-source>.c-color-gray2').text() }}).toArray()`
+    );
+  }
+}
+
 Parser.Types = {
   AUTO: 'AUTO',
   PAGE: 'PAGE',
@@ -188,5 +266,9 @@ Parser.Types = {
   RSS: 'RSS',
   XML: 'XML'
 }
+
+Parser.factories = [
+  new DiscuzParserFactory()
+];
 
 module.exports = Parser;

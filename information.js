@@ -30,8 +30,10 @@ const formatDateTime = datetime => {
   if (datetime) {
     if (Number.isInteger(datetime)) return datetime;
     else if (/^\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().toDateString() + ' ' +  datetime + ':00').getTime();
-    else if (/^\d{1,2}[-/]\d{1,2} \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().getFullYear() + (datetime.includes('-') ? '-' : '/') + datetime + ':00').getTime();
-    else if (/^(\d{2}|\d{4})[-/]\d{1,2}[-/]\d{1,2} \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime + ':00').getTime();
+    else if (/^\d{1,2}[-/月]\d{1,2}日? \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().getFullYear() + '/' + datetime.replace(/[-年月]/ig, '/').replace('日', '') + ':00').getTime();
+    else if (/^(\d{2}|\d{4})[-/年]\d{1,2}[-/月]\d{1,2}日?$/ig.test(datetime)) return new Date(datetime.replace(/[-年月]/ig, '/').replace('日', '') + ' 00:00:00').getTime();
+    else if (/^(\d{2}|\d{4})[-/年]\d{1,2}[-/月]\d{1,2}日? \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/[-年月]/ig, '/').replace('日', '') + ':00').getTime();
+    else if (/^(\d{2}|\d{4})[-/年]\d{1,2}[-/月]\d{1,2}日? \d{1,2}:\d{2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/[-年月]/ig, '/').replace('日', '')).getTime();
     else if (/^\d+天前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('天前', '')) * 86400000;
     else if (/^\d+小时前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('小时前', '')) * 3600000;
     else if (/^\d+分钟前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('分钟前', '')) * 60000;

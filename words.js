@@ -2,17 +2,14 @@ const { sleep } = require("asyncbox");
 const { screen, ipcMain } = require("electron");
 const { BrowserWindow } = require('glasstron');
 const { tween } = require('shifty');
-const Matcher = require("./matcher");
-const fs = require('fs');
 const path = require('path');
 
 const config = require('./config');
-const { timeStamp } = require("console");
 
 class WordsWindow {
   constructor() {
     this.value = '';
-    this.interset = 0;
+    this.interest = 0;
   }
   async init(app) {
     this.app = app;
@@ -41,6 +38,7 @@ class WordsWindow {
     this.window.setSkipTaskbar(true);
     this.window.menuBarVisible = false;
     ipcMain.on('words', async (event, data) => {
+      console.log('ipcMain on words:', data);
       if (data.type === 'resize') {
         if (!this.paused) {
           const size = data.size;
@@ -60,35 +58,35 @@ class WordsWindow {
             }
           })
         }
-      } else if (data.type === 'interset') {
+      } else if (data.type === 'interest') {
         this.window.hide();
         this.value = data.value;
-        this.interset = data.interset;
+        this.interest = 1;
         this.shown = false;
-      } else if (data.type === 'uninterset') {
+      } else if (data.type === 'uninterest') {
         this.window.hide();
         this.value = data.value;
-        this.interset = data.interset;
+        this.interest = -1;
         this.shown = false;
       } else if (data.type === 'cancel') {
         this.window.hide();
         this.shown = false;
       }
     })
-    await this.window.loadFile(`windows/hot.html`);
+    await this.window.loadFile(`windows/words.html`);
   }
   async show() {
     this.shown = true;
     this.value = '';
-    this.interset = 0;
+    this.interest = 0;
     this.window.setBounds({ height: 0 });
-    this.window.webContents.send('words');
+    this.window.webContents.send('words', { type: 'shown' });
     while (this.shown) {
       await sleep(500);
     }
     return {
-      interset: this.interset,
-      value: this.value.split(/[\r\n]+/ig)
+      interest: this.interest,
+      words: this.value.split(/[\r\n]+/ig)
     };
   }
   async pause() {
@@ -104,7 +102,8 @@ class WordsWindow {
   close() {
     this.window.hide();
     this.value = '';
-    this.interset = 0;
+    this.interest = 0;
+    this.shown = false;
   }
 }
 
@@ -123,6 +122,9 @@ class Words {
   }
   static async isShown() {
     return Words.window.shown;
+  }
+  static close() {
+    Words.window.close();
   }
 }
 

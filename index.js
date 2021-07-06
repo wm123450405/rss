@@ -54,6 +54,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
       const hot = new Hot();
       await hot.init(app);
       await Parser.init(app);
+      await Words.init(app);
       log.debug('user settings restoring');
       let { parsers, search } = Parser.restore();
       let { matcher } = hot.restore();
@@ -147,8 +148,9 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
             click: async () => {
               settingsMenu.items.find(mi => mi.label === '配置热词').enabled = false;
               await notice.pause(true);
-              await hot.parse(true);
+              await hot.pause();
               let { words, interest } = await Words.show();
+              console.log(words, interest);
               if (words && words.length) {
                 if (!interest || interest > 0) {
                   matcher.interest(words, 1);
@@ -156,6 +158,8 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
                   matcher.uninterest(words, 1);
                 }
               }
+              await hot.resume();
+              await notice.resume();
               settingsMenu.items.find(mi => mi.label === '配置热词').enabled = true;
             }
           }
@@ -172,6 +176,9 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
               stop = true;
               hot.close();
               notice.close();
+              progress.close();
+              Words.close();
+              Parser.close();
               tray.destroy();
             }
           },

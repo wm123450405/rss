@@ -14,13 +14,13 @@ window.addEventListener('load', function() {
     }
   });
 
-  document.getElementById('interset').addEventListener('click', event => {
-    ipcRenderer.send('words', { type: 'interset', value: document.getElementById('content').value });
+  document.getElementById('interest').addEventListener('click', event => {
+    ipcRenderer.send('words', { type: 'interest', value: document.getElementById('content').value });
     event.stopPropagation();
   })
 
-  document.getElementById('uninterset').addEventListener('click', event => {
-    ipcRenderer.send('words', { type: 'uninterset', value: document.getElementById('content').value });
+  document.getElementById('uninterest').addEventListener('click', event => {
+    ipcRenderer.send('words', { type: 'uninterest', value: document.getElementById('content').value });
     event.stopPropagation();
   })
 

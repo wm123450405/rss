@@ -80,6 +80,10 @@ class ParserWindow {
     }
     return this.selected;
   }
+  close () {
+    this.window.hide();
+    this.shown = false;
+  }
 }
 
 class Parser {
@@ -115,6 +119,9 @@ class Parser {
   }
   static async isShown() {
     return Parser.window.shown;
+  }
+  static close() {
+    Parser.window.close();
   }
   static initStoreage() {
     if (!fs.existsSync(path.join(config.path.dir, config.path.parser))) {

@@ -104,7 +104,7 @@ class Parser {
     return parsers.map(Parser.auto);
   }
   static async wait() {
-    while(this.shown) {
+    while(Parser.window.shown) {
       await sleep(500);
     }
   }

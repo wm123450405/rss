@@ -4,6 +4,7 @@ console.log = log.info;
 const path = require('path');
 const puppeteer = require('puppeteer');
 const Parser = require('./parser');
+const Words = require('./words');
 const Information = require('./information');
 const Notice = require('./notice');
 const Progress = require('./progress');
@@ -126,12 +127,12 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
 
         await sleep(5000);
         tray = new Tray(path.join(__dirname, 'assets/icon/icon.ico'));
-        const contextMenu = Menu.buildFromTemplate([
+        const settingsMenu = Menu.buildFromTemplate([
           {
-            label: '配置',
+            label: '配置源',
             click: async () => {
               log.debug('user settings need updating');
-              contextMenu.items.find(mi => mi.label === '配置').enabled = false;
+              settingsMenu.items.find(mi => mi.label === '配置源').enabled = false;
               await notice.pause(true);
               await hot.pause();
               let saved = await Parser.show(parsers);
@@ -142,8 +143,32 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
               }
               await hot.resume();
               await notice.resume();
-              contextMenu.items.find(mi => mi.label === '配置').enabled = true;
+              settingsMenu.items.find(mi => mi.label === '配置源').enabled = true;
             }
+          },
+          {
+            label: '配置热词',
+            click: async () => {
+              settingsMenu.items.find(mi => mi.label === '配置热词').enabled = false;
+              await notice.pause(true);
+              await hot.parse(true);
+              let { words, interest } = await Words.show();
+              if (words && words.length) {
+                if (!interest || interest > 0) {
+                  matcher.interest(words, 1);
+                } else {
+                  matcher.uninterest(words, 1);
+                }
+              }
+              settingsMenu.items.find(mi => mi.label === '配置热词').enabled = true;
+            }
+          }
+        ]);
+        const contextMenu = Menu.buildFromTemplate([
+          {
+            label: '设置',
+            type: 'submenu',
+            submenu: settingsMenu
           },
           {
             label: '退出',

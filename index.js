@@ -204,7 +204,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
           log.debug('start geting news');
           for (let parser of parsers) {
             if (stop) break;
-            log.debug('start geting news from ' + parser.name);
+            log.debug('start geting news from ' + (parser.name || parser.url));
             let informations = [];
             if (parser.type === Parser.Types.PAGE) {
               try {
@@ -225,7 +225,7 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
                 added.push(info);
               }
             }
-            log.debug('news got from ' + parser.name);
+            log.debug('news got from ' + (parser.name || parser.url));
           }
           if (search) {
             for (let word of matcher.search()) {

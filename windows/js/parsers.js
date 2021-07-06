@@ -3,6 +3,7 @@ const { ipcRenderer } = nodeRequire('electron');
 window.addEventListener('load', function() {
   let parsers = [];
   let search = false;
+  let initial = {};
 
   ipcRenderer.on('parsers', (event, data) => {
     if (data.type === 'parsers') {
@@ -12,6 +13,7 @@ window.addEventListener('load', function() {
       search = data.search || false;
       const classifyContains = document.getElementById('classify');
       classifyContains.innerHTML = '';
+      initial = data.initial;
       for (let classify of data.initial.parsers) {
         let classifyDiv = document.createElement('div');
         classifyDiv.className = 'classify';
@@ -53,6 +55,9 @@ window.addEventListener('load', function() {
         }
         classifyContains.appendChild(classifyDiv);
       }
+      document.getElementById('expand').innerHTML = '▼';
+      document.getElementById('others').display = 'none';
+      document.getElementById('others').value = parsers.filter(p => !data.initial.parsers.some(c => c.parsers.some(parser => parser.code === p))).join('\r\n');
       document.getElementById('search').checked = search;
       document.getElementById('ok').className = parsers.length ? 'btn' : 'btn disabled'
       if (allPromise.length) {
@@ -77,6 +82,8 @@ window.addEventListener('load', function() {
         });
       }
     } else if (data.type === 'shown') {
+      document.getElementById('others').style.display = 'none';
+      document.getElementById('expand').innerHTML = '▼';
       document.body.style.height = '0px';
       setTimeout(() => {
         let size = {
@@ -89,12 +96,32 @@ window.addEventListener('load', function() {
     }
   });
 
+  document.getElementById('expand').addEventListener('click', event => {
+    if (document.getElementById('others').style.display === 'none') {
+      document.getElementById('others').style.display = 'block';
+      document.getElementById('expand').innerHTML = '▲';
+    } else {
+      document.getElementById('others').style.display = 'none';
+      document.getElementById('expand').innerHTML = '▼';
+    }
+    document.body.style.height = '0px';
+    setTimeout(() => {
+      let size = {
+        height: document.body.scrollHeight,
+        width: document.body.scrollWidth
+      };
+      document.body.style.height = size.height + 'px';
+      ipcRenderer.send('parsers', { type: 'fixsize', size });
+    });
+  });
+
   document.getElementById('search').addEventListener('change', event => {
     search = document.getElementById('search').checked || false;
   })
 
   document.getElementById('ok').addEventListener('click', event => {
-    if (parsers.length) {
+    if (parsers.length || document.getElementById('others').value) {
+      parsers = [...document.getElementById('others').value.split(/[\r\n]+/ig).filter(p => p && p.trim()), ...parsers.filter(p => initial.parsers.some(c => c.parsers.some(parser => parser.code === p)))];
       ipcRenderer.send('parsers', { type: 'ok', parsers, search });
     }
     event.stopPropagation();

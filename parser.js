@@ -64,6 +64,7 @@ class ParserWindow {
       } else if (data.type === 'ok') {
         this.window.hide();
         let { parsers, search } = data;
+        console.log(data);
         this.selected = { parsers, search };
         this.shown = false;
       }
@@ -107,7 +108,7 @@ class Parser {
   static async show({ parsers, search }) {
     ({ parsers, search } = await Parser.window.show({
       search,
-      parsers : parsers.map(parser => parser.code)
+      parsers : parsers.map(parser => parser.code || parser.url)
     }));
     parsers = parsers.map(Parser.auto);
     return { parsers, search };
@@ -134,17 +135,21 @@ class Parser {
     return storage;
   }
   static save(storage) {
-    storage.parsers = storage.parsers.map(parser => parser.code);
+    storage.parsers = storage.parsers.map(parser => (parser.code || parser.url));
     fs.writeFileSync(path.join(config.path.dir, config.path.parser), JSON.stringify(storage));
   }
   static page({ code, name, url, icon, parser }) {
-    return new DefaultPageParser({ code, name, url, icon, parser });
+    if (parser) {
+      return new DefaultPageParser({ code, name, url, icon, parser });
+    } else {
+      return new SmartPageParser({ code, name, url, icon });
+    }
   }
   static ajax({ code, name, url, icon, parser }) {
     return new DefaultAjaxParser({ code, name, url, icon, parser });
   }
   static auto(code) {
-    let parser = Enumerable.from(initial.parsers).selectMany(t => t.parsers).first(tp => tp.code === code);
+    let parser = Enumerable.from(initial.parsers).selectMany(t => t.parsers).firstOrDefault({ type: Parser.Types.PAGE, url: code }, tp => tp.code === code);
     switch(parser.type) {
       case Parser.Types.PAGE:
         return Parser.page(parser);
@@ -205,6 +210,24 @@ class DefaultPageParser extends Parser {
       log.warn('no infos');
       return [];
     }
+  }
+}
+
+class SmartPageParser extends DefaultPageParser {
+  constructor({ code, name, url, icon }) {
+    super({ 
+      code, name, url, icon, 
+      parser: `Array.from(document.getElementsByTagName("a")).filter(a => a.childNodes.length === 1 && a.childNodes[0].nodeName === "#text" || a.children.length === 1 && ["B","EM","SPAN","TEXT","I", "STRONG"].includes(a.children[0].tagName)).map(a => ({ title:a.innerText || a.textContent, url:a.href, image: Array.from(document.getElementsByTagName("a")).filter(ai => ai.href === a.href && ai.children.length === 1 && "IMG" === ai.children[0].tagName).map(ai => ai.children[0].src)[0], parent: a.parentNode.nodeName, className: (a.parentNode.className || '').split(/\s+/ig), datetime: +Date.now() }))`
+    });
+  }
+  async parse(page) {
+    let infos = await super.parse(page);
+    // console.log('original infos', infos);
+    let selector = Enumerable.selectMany(infos, info => info.className.map(cn => cn ? info.parent + '.' + cn : info.parent)).groupBy().orderByDescending(grouping => grouping.count()).map(grouping => grouping.key).firstOrDefault('');
+    console.log(`smart selector [${ this.url }]:`, selector);
+    infos = infos.filter(info => info.className.map(cn => cn ? info.parent + '.' + cn : info.parent).includes(selector));
+    console.log(`smart infos [${ this.url }]:`, infos.length);
+    return infos;
   }
 }
 

@@ -10,9 +10,21 @@ body { background-color: #0063B1CC; width: 450px; overflow: hidden; }
   margin-right: 8px;
   margin-top: 8px;
   cursor: pointer;
+  position: relative;
 }
 .tag.selected, .tag:active {
   background-color: #92ADC2;
+}
+.tag.selected:hover, .tag:active:hover {
+  border: 0;
+  padding: 8px;
+}
+.tag.selected::after, .tag.active::after {
+  content: '√';
+  color: #ffff99;
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
 }
 .tag:hover {
   border: 2px solid #92ADC2;
@@ -31,6 +43,7 @@ body { background-color: #0063B1CC; width: 450px; overflow: hidden; }
   display: inline-block;
   margin-right: 8px;
   cursor: pointer;
+  position: relative;
 }
 .btn.disabled:hover {
   border: 0;
@@ -46,6 +59,7 @@ body { background-color: #0063B1CC; width: 450px; overflow: hidden; }
 .btn:active {
   background-color: #92ADC2;
 }
+
 .tip {
   color: #92ADC2;
   padding: 8px;
@@ -113,4 +127,11 @@ input[type=checkbox]:checked::before {
 }
 input[type=checkbox]:disabled::before {
   background-color: #666666;
+}
+
+input[type=text],input[type=number],input[type=password],textarea {
+  border-radius: 4px;
+  border: 2px solid #CCCCCC;
+  outline: none;
+  vertical-align: middle;
 }

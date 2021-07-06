@@ -3,6 +3,7 @@ const { ipcRenderer } = nodeRequire('electron');
 window.addEventListener('load', function() {
   ipcRenderer.on('words', (event, data) => {
     if (data.type === 'shown') {
+      document.getElementById('content').value = '';
       setTimeout(() => {
         let size = {
           height: document.body.scrollHeight,

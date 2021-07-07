@@ -20,10 +20,15 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
 
 log.transports.file.level = "debug";
 
-autoUpdater.logger = log;
-autoUpdater.checkForUpdatesAndNotify();
+if (!fs.existsSync('debug')) {
+  fs.mkdirSync('debug');
+}
+if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
+  fs.mkdirSync(path.join(app.getPath('userData'), config.path.dir));
+}
 
 (async () => {
+  log.debug('app starting');
   let browser, pool, pages = [];
   try {
     if (app.requestSingleInstanceLock()) {
@@ -90,6 +95,24 @@ autoUpdater.checkForUpdatesAndNotify();
           progress.close();
           log.debug('chromium success downloaded');
         }
+
+        autoUpdater.logger = log;
+        if (autoUpdater.isUpdaterActive()) {
+          autoUpdater.on('update-downloaded', async () => {
+            await notice.pause(true);
+            await hot.pause();
+            autoUpdater.quitAndInstall();
+          });
+          autoUpdater.on('error', async () => {
+            await sleep(30000);
+            autoUpdater.checkForUpdates();
+          });
+          autoUpdater.on('update-not-available', async () => {
+            await sleep(3600000);
+            autoUpdater.checkForUpdates();
+          });
+          autoUpdater.checkForUpdates();
+        }
   
         const executablePath = browserFetcher.revisionInfo(revision).executablePath;
         log.debug('chromium starting: ' + executablePath);
@@ -147,7 +170,7 @@ autoUpdater.checkForUpdatesAndNotify();
 
         log.debug('chromium page tab started');
       
-        await Information.initStorage();
+        await Information.initStorage(app);
 
         await sleep(5000);
         tray = new Tray(path.join(__dirname, 'assets/icon/icon.ico'));
@@ -176,9 +199,9 @@ autoUpdater.checkForUpdatesAndNotify();
               console.log(words, interest);
               if (words && words.length) {
                 if (!interest || interest > 0) {
-                  matcher.interest(words, 1);
+                  matcher.interest(words, config.hot.weight.interset);
                 } else {
-                  matcher.uninterest(words, 1);
+                  matcher.uninterest(words, config.hot.weight.uninterset.main);
                 }
               }
               await hot.resume();
@@ -321,10 +344,7 @@ autoUpdater.checkForUpdatesAndNotify();
     log.error(e);
   } finally {
     try {
-      if (!fs.existsSync('debug')) {
-        fs.mkdirSync('debug');
-      }
-      await parallel([ ...pages, ...pool.values ].map(page => (async () => {
+      await parallel([ ...pages, ...(pool ? pool.values : []) ].map(page => (async () => {
         if (page && page.url()) await page.screenshot({ path: `debug/screenshot.${ page.url().replace(/[-:&%\?\/\.]/ig, '_') }.png`, fullPage: true });
       })()));
     } catch(e) {

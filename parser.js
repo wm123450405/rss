@@ -102,7 +102,7 @@ class Parser {
   }
   static window = new ParserWindow();
   static async init(app) {
-    Parser.initStoreage();
+    Parser.initStoreage(app);
     await Parser.window.init(app);
   }
   static async show({ parsers, search }) {
@@ -124,19 +124,20 @@ class Parser {
   static close() {
     Parser.window.close();
   }
-  static initStoreage() {
-    if (!fs.existsSync(path.join(config.path.dir, config.path.parser))) {
-      fs.writeFileSync(path.join(config.path.dir, config.path.parser), '{}');
+  static initStoreage(app) {
+    Parser.dataFile = path.join(app.getPath('userData'), config.path.dir, config.path.parser);
+    if (!fs.existsSync(Parser.dataFile)) {
+      fs.writeFileSync(Parser.dataFile, '{}');
     }
   }
   static restore() {
-    const storage = JSON.parse(fs.readFileSync(path.join(config.path.dir, config.path.parser)));
+    const storage = JSON.parse(fs.readFileSync(Parser.dataFile));
     storage.parsers = (storage.parsers || []).map(Parser.auto);
     return storage;
   }
   static save(storage) {
     storage.parsers = storage.parsers.map(parser => (parser.code || parser.url));
-    fs.writeFileSync(path.join(config.path.dir, config.path.parser), JSON.stringify(storage));
+    fs.writeFileSync(Parser.dataFile, JSON.stringify(storage));
   }
   static page({ code, name, url, icon, parser }) {
     if (parser) {

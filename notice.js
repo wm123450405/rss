@@ -103,6 +103,7 @@ class Notice extends EventEmitter {
     this.delaySend();
   }
   async delaySend() {
+    log.info('剩余未读:' + this.notices.length);
     await sleep(1500);
     this.doSend();
   }

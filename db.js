@@ -1,10 +1,11 @@
 const path = require('path');
+const config = require('./config');
 const Database = require('tingodb')({}).Db;
 
 class Db {
-    init(space, indexes) {
+    init(app, space, indexes) {
         return new Promise((resolve, reject) => {
-            new Database(path.resolve('user'), {}).open((err, db) => {
+            new Database(path.join(app.getPath('userData'), config.path.dir), {}).open((err, db) => {
                 if (err) {
                     console.log(err);
                     reject(err);
@@ -43,9 +44,9 @@ class Db {
             });
         })
     }
-    static async create(space, indexes) {
+    static async create(app, space, indexes) {
         let db = new Db()
-        await db.init(space, indexes || []);
+        await db.init(app, space, indexes || []);
         return db;
     }
     findOne(query, sortQuery) {

@@ -5,13 +5,13 @@ const config = {
     parser: 'parser.json'
   },
   hot: {
-    size: 50,
-    main: 10,
+    size: 80,
+    main: 12,
     weight: {
-      interset: 2.5,
+      interset: 25,
       uninterset: {
-        main: 1,
-        other: 0.2
+        main: 10,
+        other: 2
       }
     }
   }

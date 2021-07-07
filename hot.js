@@ -13,10 +13,10 @@ class Hot {
   constructor() {
     this.tags = false;
     this.selected = false;
-    this.initStoreage();
   }
   async init(app) {
     this.app = app;
+    this.initStoreage(app);
     this.shown = false;
     this.paused = false;
     this.window = new BrowserWindow({
@@ -75,9 +75,10 @@ class Hot {
     })
     await this.window.loadFile(`windows/hot.html`);
   }
-  initStoreage() {
-    if (!fs.existsSync(path.join(config.path.dir, config.path.hot))) {
-      fs.writeFileSync(path.join(config.path.dir, config.path.hot), '{}');
+  initStoreage(app) {
+    this.dataFile = path.join(app.getPath('userData'), config.path.dir, config.path.hot);
+    if (!fs.existsSync(this.dataFile)) {
+      fs.writeFileSync(this.dataFile, '{}');
     }
   }
   async show(tags) {
@@ -107,7 +108,7 @@ class Hot {
     this.selected = [];
   }
   restore() {
-    const saved = JSON.parse(fs.readFileSync(path.join(config.path.dir, config.path.hot)));
+    const saved = JSON.parse(fs.readFileSync(this.dataFile));
     this.matcher = new Matcher(saved.matcher || []);
     this.matcher.on('changed', () => this.save());
     return {
@@ -118,7 +119,7 @@ class Hot {
     const saved = {
       matcher: this.matcher.tags
     };
-    fs.writeFileSync(path.join(config.path.dir, config.path.hot), JSON.stringify(saved));
+    fs.writeFileSync(this.dataFile, JSON.stringify(saved));
   }
 }
 

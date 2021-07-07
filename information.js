@@ -112,8 +112,8 @@ class Information {
     }
   }
   static db = false;
-  static async initStorage() {
-    Information.db = await Db.create('informations', [['m', 1], 't', 's', { key: 'u', options: { unique: true } }, 'i'])
+  static async initStorage(app) {
+    Information.db = await Db.create(app, 'informations', [['m', 1], 't', 's', { key: 'u', options: { unique: true } }, 'i'])
   }
   static async add(information) {
     if (await Information.db.findOne({ u: information.url })) {

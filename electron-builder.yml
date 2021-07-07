@@ -28,3 +28,5 @@ win:
       arch:
         - x64
         # - ia32
+nsis:
+  artifactName: "${productName}-setup-${version}.${ext}"

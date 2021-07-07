@@ -1,5 +1,6 @@
 const { app, Tray, Menu } = require('electron');
 const log = require('electron-log');
+const { autoUpdater } = require('electron-updater');
 console.log = log.info;
 const path = require('path');
 const puppeteer = require('puppeteer');
@@ -17,6 +18,10 @@ const config = require('./config');
 const browserFetcher = puppeteer.createBrowserFetcher({ path: path.resolve('puppeteer'), host: 'https://npm.taobao.org/mirrors' });
 const revision = require('puppeteer/package').puppeteer.chromium_revision;
 
+log.transports.file.level = "debug";
+
+autoUpdater.logger = log;
+autoUpdater.checkForUpdatesAndNotify();
 
 (async () => {
   let browser, pool, pages = [];

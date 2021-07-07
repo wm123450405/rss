@@ -15,7 +15,9 @@ class Pool {
             this.pool.push(await this.creation());
             this.count++;
         }
-        this.check();
+        if (this.pool.length < this.idle && this.count < this.max) {
+            this.check();
+        }
     }
     async get() {
         try {

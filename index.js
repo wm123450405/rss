@@ -222,9 +222,9 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
           log.debug('start geting news');
 
           await parallel(parsers.map(parser => (async () => {
-            log.debug('start geting news from ' + (parser.name || parser.url));
             let informations = [];
             if (stop) return informations;
+            log.debug('start geting news from ' + (parser.name || parser.url));
             if (parser.type === Parser.Types.PAGE) {
               try {
                 log.info('page loading: ' + parser.url);
@@ -247,12 +247,12 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
             log.debug('news got from ' + (parser.name || parser.url));
             return informations;
           })()));
-
+          if (stop) break;
           if (search) {
             await parallel(Enumerable.selectMany(matcher.search(), word => Parser.search(word)).select(parser => (async () => {
-              log.debug('start search news from:' + parser.name);
               let informations = [];
               if (stop) return informations;
+              log.debug('start search news from:' + parser.name);
               if (parser.type === Parser.Types.PAGE) {
                 let page;
                 try {
@@ -315,13 +315,23 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
   } catch(e) {
     log.error(e);
   } finally {
-    for (let page of pages) {
-      if (page) await page.screenshot({ path: `debug/screenshot.${ page.url.replace(/[-&%\?\/\.]/ig, '_') }.png`, fullPage: true });
+    try {
+      if (!fs.existsSync('debug')) {
+        fs.mkdirSync('debug');
+      }
+      await parallel([ ...pages, ...pool.values ].map(page => (async () => {
+        if (page && page.url()) await page.screenshot({ path: `debug/screenshot.${ page.url().replace(/[-:&%\?\/\.]/ig, '_') }.png`, fullPage: true });
+      })()));
+    } catch(e) {
+      log.error(e);
+    } finally {
+      try {
+        if (browser) await browser.close();
+      } catch(e) {
+        log.error(e);
+      } finally {
+        await app.quit();
+      }
     }
-    for (let page of pool.values) {
-      if (page) await page.screenshot({ path: `debug/screenshot.${ page.url.replace(/[-&%\?\/\.]/ig, '_') }.png`, fullPage: true });
-    }
-    if (browser) await browser.close();
-    await app.quit();
   }
 })();

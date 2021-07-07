@@ -39,6 +39,8 @@ const formatDateTime = datetime => {
     else if (/^\d+分钟前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('分钟前', '')) * 60000;
     else if (/^\d+秒前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('秒前', '')) * 1000;
     else if ('刚刚' === datetime) return +Date.now();
+    else if ('昨天' === datetime) return +Date.now() - 86400000;
+    else if ('前天' === datetime) return +Date.now() - 86400000;
     else return 0;
   } else {
     return 0;

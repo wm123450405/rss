@@ -8,7 +8,7 @@ const Words = require('./words');
 const Information = require('./information');
 const Notice = require('./notice');
 const Progress = require('./progress');
-const { sleep, waitForCondition } = require('asyncbox');
+const { sleep, waitForCondition, parallel } = require('asyncbox');
 const Hot = require('./hot');
 const fs = require('fs');
 const Enumerable = require('linq-js');
@@ -17,7 +17,7 @@ const browserFetcher = puppeteer.createBrowserFetcher({ path: path.resolve('pupp
 const revision = require('puppeteer/package').puppeteer.chromium_revision;
 
 (async () => {
-  let browser, page;
+  let browser, page, pages = [];
   try {
     if (app.requestSingleInstanceLock()) {
       log.debug('start check and download chromium');
@@ -118,10 +118,15 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
         });
         log.debug('chromium started');
         log.debug('chromium page tab starting');
-        const pages = await browser.pages();
-        page = pages.length ? pages[0] : await browser.newPage();
+        for (let parser of parsers) {
+          parser.page = await browser.newPage();
+          await parser.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
+          parser.page.setDefaultTimeout(60000);
+        }
+        page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
         page.setDefaultTimeout(60000);
+
         log.debug('chromium page tab started');
       
         await Information.initStorage();
@@ -202,17 +207,18 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
         for(let tick = 0; !stop; tick++) {
           let added = [];
           log.debug('start geting news');
-          for (let parser of parsers) {
-            if (stop) break;
+
+          await parallel(parsers.map(parser => (async () => {
             log.debug('start geting news from ' + (parser.name || parser.url));
             let informations = [];
+            if (stop) return informations;
             if (parser.type === Parser.Types.PAGE) {
               try {
                 log.info('page loading: ' + parser.url);
-                await page.goto(parser.url);
+                await parser.page.goto(parser.url);
                 log.info('page loaded: ' + parser.url);
-                if (stop) break;
-                informations = (await parser.parse(page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
+                if (stop) return informations;
+                informations = (await parser.parse(parser.page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
                 log.info(informations.length + ' news got from: ' + parser.url);
               } catch(e) {
                 log.error(e);
@@ -226,7 +232,9 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
               }
             }
             log.debug('news got from ' + (parser.name || parser.url));
-          }
+            return informations;
+          })()));
+
           if (search) {
             for (let word of matcher.search()) {
               if (stop) break;
@@ -294,7 +302,9 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
   } catch(e) {
     log.error(e);
   } finally {
-    if (page) await page.screenshot({ path: 'debug/screenshot.png', fullPage: true });
+    for (let page of pages) {
+      if (page) await page.screenshot({ path: `debug/screenshot.${ page.url.replace(/[-&%\?\/\.]/ig, '_') }.png`, fullPage: true });
+    }
     if (browser) await browser.close();
     await app.quit();
   }

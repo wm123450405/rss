@@ -219,8 +219,17 @@ class SmartPageParser extends DefaultPageParser {
       code, name, url, icon, 
       parser: `Array.from(document.getElementsByTagName("a")).filter(a => a.childNodes.length === 1 && a.childNodes[0].nodeName === "#text" || a.children.length === 1 && ["B","EM","SPAN","TEXT","I", "STRONG"].includes(a.children[0].tagName)).map(a => ({ title:a.innerText || a.textContent, url:a.href, image: Array.from(document.getElementsByTagName("a")).filter(ai => ai.href === a.href && ai.children.length === 1 && "IMG" === ai.children[0].tagName).map(ai => ai.children[0].src)[0], parent: a.parentNode.nodeName, className: (a.parentNode.className || '').split(/\s+/ig), datetime: +Date.now() }))`
     });
+    this.factories = [
+      new DiscuzParserFactory()
+    ];
   }
   async parse(page) {
+    for (let factory of this.factories) {
+      if (await factory.match(page, this.url)) {
+        let parser = await factory.create(page, this.url);
+        return await parser.parse(page);
+      }
+    }
     let infos = await super.parse(page);
     // console.log('original infos', infos);
     let selector = Enumerable.selectMany(infos, info => info.className.map(cn => cn ? info.parent + '.' + cn : info.parent)).groupBy().orderByDescending(grouping => grouping.count()).map(grouping => grouping.key).firstOrDefault('');
@@ -248,7 +257,7 @@ class DiscuzParser extends DefaultPageParser {
     super({
       name, url, icon,
       code: url,
-      parser: `[...document.querySelectorAll('#threadlisttableid tr')].filter(tr => tr.querySelector('.common a.s')).map(tr => ({ url: tr.querySelector('.common a.s').href, title: tr.querySelector('.common a.s').textContent, datetime: tr.querySelector('.num+.by em').textContent }))`
+      parser: `[...[...document.querySelectorAll('#threadlisttableid tr')].filter(tr => tr.querySelector('.common a.s')).map(tr => ({ url: tr.querySelector('.common a.s').href, title: tr.querySelector('.common a.s').textContent, datetime: tr.querySelector('.num+.by em').textContent })), ...[...document.querySelectorAll('ul.category_newlist>li>a')].map(a => ({ url: a.href, title: a.title || a.innerText || a.textContent, datetime: +Date.now() }))]`
     });
   }
 }
@@ -261,8 +270,9 @@ class DiscuzParserFactory extends ParserFactory {
     return await page.evaluate(`document.head.querySelector('meta[name=generator]')&&document.head.querySelector('meta[name=generator]').content.startsWith('Discuz!')||!!document.getElementById('discuz_tips')`);
   }
   async create(page, url) {
-    let info = await page.evaluate(`{ name: document.head.querySelector('meta[name=application-name]')&&document.head.querySelector('meta[name=application-name]').content||document.title, icon: document.querySelector('#hd h2 img').src }`);
-    return new DiscuzParser(info.name, url, info.icon);
+    let name = await page.evaluate(`document.head.querySelector('meta[name=application-name]')&&document.head.querySelector('meta[name=application-name]').content||document.title`);
+    let icon = await page.evaluate(`document.querySelector('#hd h2 img').src`);
+    return new DiscuzParser(name, url, icon);
   }
 }
 

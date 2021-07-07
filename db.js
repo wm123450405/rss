@@ -7,7 +7,7 @@ class Db {
         return new Promise((resolve, reject) => {
             new Database(path.join(app.getPath('userData'), config.path.dir), {}).open((err, db) => {
                 if (err) {
-                    console.log(err);
+                    console.error(err);
                     reject(err);
                 } else {
                     let collection = db.collection(space + '.db');
@@ -25,7 +25,7 @@ class Db {
                             }
                             collection.createIndex(index, options, err => {
                                 if (err) {
-                                    console.log(err);
+                                    console.error(err);
                                     reject(err);
                                 } else {
                                     i++;

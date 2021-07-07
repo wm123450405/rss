@@ -107,6 +107,9 @@ class Notice extends EventEmitter {
     await sleep(1500);
     this.doSend();
   }
+  clear(matcher) {
+    this.notices = this.notices.filter(info => info.datetime >= +Date.now() - 86400000 && matcher.match(info));
+  }
   doSend() {
     if (!this.shown) {
       if (this.notices.length) {

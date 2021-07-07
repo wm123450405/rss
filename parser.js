@@ -64,7 +64,6 @@ class ParserWindow {
       } else if (data.type === 'ok') {
         this.window.hide();
         let { parsers, search } = data;
-        console.log(data);
         this.selected = { parsers, search };
         this.shown = false;
       }
@@ -232,11 +231,10 @@ class SmartPageParser extends DefaultPageParser {
       }
     }
     let infos = await super.parse(page);
-    // console.log('original infos', infos);
     let selector = Enumerable.selectMany(infos, info => info.className.map(cn => cn ? info.parent + '.' + cn : info.parent)).groupBy().orderByDescending(grouping => grouping.count()).map(grouping => grouping.key).firstOrDefault('');
-    console.log(`smart selector [${ this.url }]:`, selector);
+    log.debug(`smart selector [${ this.url }]:`, selector);
     infos = infos.filter(info => info.className.map(cn => cn ? info.parent + '.' + cn : info.parent).includes(selector));
-    console.log(`smart infos [${ this.url }]:`, infos.length);
+    log.debug(`smart infos [${ this.url }]:`, infos.length);
     return infos;
   }
 }

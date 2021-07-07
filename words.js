@@ -38,7 +38,6 @@ class WordsWindow {
     this.window.setSkipTaskbar(true);
     this.window.menuBarVisible = false;
     ipcMain.on('words', async (event, data) => {
-      console.log('ipcMain on words:', data);
       if (data.type === 'resize') {
         if (!this.paused) {
           const size = data.size;

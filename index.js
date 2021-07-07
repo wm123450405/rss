@@ -2,6 +2,7 @@ const { app, Tray, Menu } = require('electron');
 const log = require('electron-log');
 const { autoUpdater } = require('electron-updater');
 console.log = log.info;
+console.error = log.error;
 const path = require('path');
 const puppeteer = require('puppeteer');
 const Pool = require('./pool');
@@ -196,7 +197,7 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
               await notice.pause(true);
               await hot.pause();
               let { words, interest } = await Words.show();
-              console.log(words, interest);
+              log.info(words, interest);
               if (words && words.length) {
                 if (!interest || interest > 0) {
                   matcher.interest(words, config.hot.weight.interset);
@@ -238,11 +239,13 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
           for (let tag of info.tags) {
             matcher.interest([ tag.word ], tag.weight / sum);
           }
+          notice.clear(matcher);
         }).on('uninterset', info => {
           let sum = Enumerable.sum(info.tags, tag => tag.weight || 0);
           for (let tag of info.tags) {
             matcher.uninterest([ tag.word ], tag.weight / sum);
           }
+          notice.clear(matcher);
         })
         latest = +Date.now() - 86400000;
         for(let tick = 0; !stop; tick++) {
@@ -267,11 +270,7 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
             } else if (parser.type === Parser.Types.AJAX) {
               
             }
-            for (let info of informations) {
-              if (await Information.add(info)) {
-                added.push(info);
-              }
-            }
+            added.push(...(await Information.addAll(informations)));
             log.debug('news got from ' + (parser.name || parser.url));
             return informations;
           })()));
@@ -299,11 +298,7 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
               } else if (parser.type === Parser.Types.AJAX) {
                 
               }
-              for (let info of informations) {
-                if (await Information.add(info)) {
-                  added.push(info);
-                }
-              }
+              added.push(...(await Information.addAll(informations)));
               log.debug('news searched from ' + parser.name);
             })()).toArray());
           }

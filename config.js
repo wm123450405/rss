@@ -13,6 +13,12 @@ const config = {
         main: 10,
         other: 2
       }
+    },
+    thresholds: {
+      max: 1.20,
+      min: 0.80,
+      line: 1.05,
+      search: 1.25
     }
   }
 }

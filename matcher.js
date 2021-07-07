@@ -1,12 +1,13 @@
 const { EventEmitter } = require('events');
 const Enumerable = require('linq-js');
 const log = require('electron-log');
+const config = require('./config');
 
 const defaultWeight = 1;
 const interest = (original, weight = 1) => original * (1 + 0.01 * (original >= 2 ? Math.sqrt(weight) : weight));
 const uninterest = (original, weight = 1) => original * (1 - 0.01 * (original <= 0.5 ? weight * weight : weight));
 const match = (original, weight) => original * weight;
-const thresholds = { max: 1.20, min: 0.50, line: 1.05, search: 1.25 };
+const thresholds = config.hot.thresholds;
 
 class Matcher extends EventEmitter {
   constructor(tags) {
@@ -47,7 +48,7 @@ class Matcher extends EventEmitter {
     return this.tags.some(tag => (tag.p <= thresholds.min || tag.p >= thresholds.max) && tag.w === word);
   }
   search() {
-    return this.tags.filter(tag => tag.p > thresholds.line).map(tag => tag.w);
+    return this.tags.filter(tag => tag.p > thresholds.search).map(tag => tag.w);
   }
   empty() {
     return this.tags.length === 0;

@@ -313,7 +313,7 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
             log.debug('check and add hot tags');
             let tags = await Information.hotTags([], latest);
             let words = tags.map(tag => tag.word).filter(word => !matcher.includes(word));
-            if (words.length > 10) {
+            if (words.length >= config.hot.main) {
               await notice.pause();
               await Parser.wait();
               let interestingWords = await hot.show(words);

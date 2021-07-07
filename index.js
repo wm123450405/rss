@@ -3,6 +3,7 @@ const log = require('electron-log');
 console.log = log.info;
 const path = require('path');
 const puppeteer = require('puppeteer');
+const Pool = require('./pool');
 const Parser = require('./parser');
 const Words = require('./words');
 const Information = require('./information');
@@ -16,8 +17,9 @@ const config = require('./config');
 const browserFetcher = puppeteer.createBrowserFetcher({ path: path.resolve('puppeteer'), host: 'https://npm.taobao.org/mirrors' });
 const revision = require('puppeteer/package').puppeteer.chromium_revision;
 
+
 (async () => {
-  let browser, page, pages = [];
+  let browser, pool, pages = [];
   try {
     if (app.requestSingleInstanceLock()) {
       log.debug('start check and download chromium');
@@ -126,6 +128,17 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
         page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
         page.setDefaultTimeout(60000);
+        pool = new Pool(
+          async () => {
+            let page = await browser.newPage();
+            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
+            page.setDefaultTimeout(60000);
+            return page;
+          },
+          async page => {
+            await page.close();
+          }
+        );
 
         log.debug('chromium page tab started');
       
@@ -236,35 +249,35 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
           })()));
 
           if (search) {
-            for (let word of matcher.search()) {
-              if (stop) break;
-              log.debug('start search news of keyword:' + word);
-              for (let parser of Parser.search(word)) {
-                if (stop) break;
-                log.debug('start search news from:' + parser.name);
-                let informations = [];
-                if (parser.type === Parser.Types.PAGE) {
-                  try {
-                    log.info('page loading: ' + parser.url);
-                    await page.goto(parser.url);
-                    log.info('page loaded: ' + parser.url);
-                    if (stop) break;
-                    informations = (await parser.parse(page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
-                    log.info(informations.length + ' news searched from: ' + parser.url);
-                  } catch(e) {
-                    log.error(e);
-                  }
-                } else if (parser.type === Parser.Types.AJAX) {
-                  
+            await parallel(Enumerable.selectMany(matcher.search(), word => Parser.search(word)).select(parser => (async () => {
+              log.debug('start search news from:' + parser.name);
+              let informations = [];
+              if (stop) return informations;
+              if (parser.type === Parser.Types.PAGE) {
+                let page;
+                try {
+                  log.info('page loading: ' + parser.url);
+                  page = await pool.get();
+                  await page.goto(parser.url);
+                  log.info('page loaded: ' + parser.url);
+                  if (stop) return informations;
+                  informations = (await parser.parse(page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
+                  log.info(informations.length + ' news searched from: ' + parser.url);
+                } catch(e) {
+                  log.error(e);
+                } finally {
+                  if (page) pool.free(page);
                 }
-                for (let info of informations) {
-                  if (await Information.add(info)) {
-                    added.push(info);
-                  }
-                }
-                log.debug('news searched from ' + parser.name);
+              } else if (parser.type === Parser.Types.AJAX) {
+                
               }
-            }
+              for (let info of informations) {
+                if (await Information.add(info)) {
+                  added.push(info);
+                }
+              }
+              log.debug('news searched from ' + parser.name);
+            })()).toArray());
           }
           if (stop) break;
           log.debug('news got');
@@ -303,6 +316,9 @@ const revision = require('puppeteer/package').puppeteer.chromium_revision;
     log.error(e);
   } finally {
     for (let page of pages) {
+      if (page) await page.screenshot({ path: `debug/screenshot.${ page.url.replace(/[-&%\?\/\.]/ig, '_') }.png`, fullPage: true });
+    }
+    for (let page of pool.values) {
       if (page) await page.screenshot({ path: `debug/screenshot.${ page.url.replace(/[-&%\?\/\.]/ig, '_') }.png`, fullPage: true });
     }
     if (browser) await browser.close();

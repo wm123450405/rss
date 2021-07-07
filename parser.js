@@ -294,7 +294,7 @@ class BaiduSearchParser extends SearchParser {
       `baidu.${keyword}`,
       `百度-${keyword}`,
       `https://www.baidu.com/img/flexible/logo/pc/result.png`,
-      `$('.result-op.new-pmd').map(function() { return { title: $(this).find('a.news-title-font_1xS-F').text(), summary: $(this).find('.c-span-last>.c-font-normal').text(), image: $(this).find('img').attr('src'), url: $(this).find('a').attr('href'), datetime: $(this).find('.news-source>.c-color-gray2').text() }}).toArray()`
+      `$('.result-op.new-pmd').map(function() { return { title: $(this).find('a.news-title-font_1xS-F').text(), summary: $(this).find('.c-span-last>.c-font-normal').text(), image: $(this).find('img').attr('src'), url: $(this).find('a').attr('href'), datetime: $(this).find('.c-span-last .c-color-gray2').text() }}).toArray()`
     );
   }
 }

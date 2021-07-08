@@ -30,7 +30,7 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
 
 (async () => {
   log.debug('app starting');
-  let browser, pool, pages = [];
+  let browser, pool;
   try {
     if (app.requestSingleInstanceLock()) {
       log.debug('start check and download chromium');
@@ -149,14 +149,6 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
         });
         log.debug('chromium started');
         log.debug('chromium page tab starting');
-        for (let parser of parsers) {
-          parser.page = await browser.newPage();
-          await parser.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
-          parser.page.setDefaultTimeout(60000);
-        }
-        page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
-        page.setDefaultTimeout(60000);
         pool = new Pool(
           async () => {
             let page = await browser.newPage();
@@ -257,16 +249,20 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
             if (stop) return;
             log.debug('start geting news from ' + (parser.name || parser.url));
             if (parser.type === Parser.Types.PAGE) {
+              let page;
               try {
                 log.info('page loading: ' + parser.url);
-                await parser.page.goto(parser.url);
+                page = await pool.get();
+                await page.goto(parser.url);
                 log.info('page loaded: ' + parser.url);
                 if (stop) return;
-                infos = (await parser.parse(parser.page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
+                infos = (await parser.parse(page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
                 log.info(infos.length + ' news got from: ' + parser.url);
                 informations.push(...infos);
               } catch(e) {
                 log.error(e);
+              } finally {
+                if (page) pool.free(page);
               }
             } else if (parser.type === Parser.Types.AJAX) {
               
@@ -301,7 +297,7 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
               log.debug('news searched from ' + parser.name);
             })()).toArray());
           }
-          
+
           await notice.pause();
           if (stop) break;
           added.push(...(await Information.addAll(informations)));
@@ -344,7 +340,7 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
     log.error(e);
   } finally {
     try {
-      await parallel([ ...pages, ...(pool ? pool.values : []) ].map(page => (async () => {
+      await parallel((pool ? pool.values : []).map(page => (async () => {
         if (page && page.url()) await page.screenshot({ path: `debug/screenshot.${ page.url().replace(/[-:&%\?\/\.]/ig, '_') }.png`, fullPage: true });
       })()));
     } catch(e) {

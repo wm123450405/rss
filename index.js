@@ -250,35 +250,34 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
         latest = +Date.now() - 86400000;
         for(let tick = 0; !stop; tick++) {
           let added = [];
+          let informations = [];
           log.debug('start geting news');
-
           await parallel(parsers.map(parser => (async () => {
-            let informations = [];
-            if (stop) return informations;
+            let infos = [];
+            if (stop) return;
             log.debug('start geting news from ' + (parser.name || parser.url));
             if (parser.type === Parser.Types.PAGE) {
               try {
                 log.info('page loading: ' + parser.url);
                 await parser.page.goto(parser.url);
                 log.info('page loaded: ' + parser.url);
-                if (stop) return informations;
-                informations = (await parser.parse(parser.page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
-                log.info(informations.length + ' news got from: ' + parser.url);
+                if (stop) return;
+                infos = (await parser.parse(parser.page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
+                log.info(infos.length + ' news got from: ' + parser.url);
+                informations.push(...infos);
               } catch(e) {
                 log.error(e);
               }
             } else if (parser.type === Parser.Types.AJAX) {
               
             }
-            added.push(...(await Information.addAll(informations)));
             log.debug('news got from ' + (parser.name || parser.url));
-            return informations;
           })()));
           if (stop) break;
           if (search) {
             await parallel(Enumerable.selectMany(matcher.search(), word => Parser.search(word)).select(parser => (async () => {
-              let informations = [];
-              if (stop) return informations;
+              let infos = [];
+              if (stop) return;
               log.debug('start search news from:' + parser.name);
               if (parser.type === Parser.Types.PAGE) {
                 let page;
@@ -287,9 +286,10 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
                   page = await pool.get();
                   await page.goto(parser.url);
                   log.info('page loaded: ' + parser.url);
-                  if (stop) return informations;
-                  informations = (await parser.parse(page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
-                  log.info(informations.length + ' news searched from: ' + parser.url);
+                  if (stop) return;
+                  infos = (await parser.parse(page)).map(({ url, title, summary, image, datetime }) => new Information(url, title, summary, image, datetime)).filter(info => info.datetime);
+                  log.info(infos.length + ' news searched from: ' + parser.url);
+                  informations.push(...infos);
                 } catch(e) {
                   log.error(e);
                 } finally {
@@ -298,10 +298,15 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
               } else if (parser.type === Parser.Types.AJAX) {
                 
               }
-              added.push(...(await Information.addAll(informations)));
               log.debug('news searched from ' + parser.name);
             })()).toArray());
           }
+          
+          await notice.pause();
+          if (stop) break;
+          added.push(...(await Information.addAll(informations)));
+          await notice.resume();
+
           if (stop) break;
           log.debug('news got');
           if (tick % 10 == 0) {

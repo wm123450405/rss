@@ -20,6 +20,11 @@ const config = {
       line: 1.05,
       search: 1.25
     }
+  },
+  similar: {
+    hash: 128,
+    warn: 128,
+    truly: 64
   }
 }
 

@@ -1,7 +1,7 @@
 const nodejieba = require('nodejieba');
 const path = require('path');
 const log = require('electron-log');
-const md5 = require('md5');
+const crypto = require('crypto');
 const Enumerable = require('linq-js');
 const config = require('./config');
 const Db = require('./db');
@@ -114,7 +114,7 @@ class Information {
       // h: information.simhash
     }
   }
-  static simhash(info) {
+  static simhash(info, size = config.similar.hash) {
     // let v = 0xFFFFFFFF.toString(2).split('').map(v => 0);
     // for (let i = 0; i < info.tags.length; i++) {
     //   let tag = info.tags[i];
@@ -131,19 +131,19 @@ class Information {
     //   log.error(info.title, v, result);
     // }
     // return result;
-    let v = new Array(32).fill(false).map(() => [0, 0, 0, 0]);
+    let v = new Array(size * 2).fill(false).map(() => [0, 0, 0, 0]);
     for (let i = 0; i < info.tags.length; i++) {
       let tag = info.tags[i];
-      let hash = Information.hash(tag.word);
+      let hash = Information.hash(tag.word, size);
       let weight = Math.round(Math.sqrt(tag.weight)) || 1;
-      for (let j = 0; j < 32; j++) {
+      for (let j = 0; j < size * 2; j++) {
         for (let k = 0; k < 4; k++) {
           v[j][k] += ((hash[j] >> (3 - k)) & 0x01) ? weight : -weight;
         }
       }
     }
     // log.debug(info.title, v);
-    for (let j = 0; j < 32; j++) {
+    for (let j = 0; j < size * 2; j++) {
       let n = 0;
       for (let k = 0; k < 4; k++) {
         n |= v[j][k] > 0 ? 1 << (3 - k) : 0;
@@ -153,13 +153,13 @@ class Information {
     // log.debug(info.title, v);
     return v.join('');
   }
-  static hash(str) {
+  static hash(str, size = config.similar.hash) {
     // let h = 0x7FFFFFFF;
     // for (let i = 0; i < str.length; i++) {
     //   h ^= str.charCodeAt(i) << (i * 7 % 16);
     // }
     // return h;
-    return md5(str).split('').map(v => Number.parseInt(v, 16));
+    return crypto.pbkdf2Sync(str, '', 1, size, 'sha512').toString('hex').split('').map(v => Number.parseInt(v, 16));
   }
   static distance(x, y) {
     let length = Math.min(x.length, y.length);
@@ -183,26 +183,7 @@ class Information {
     Information.db = await Db.create(app, 'informations', [['m', 1], 't', 's', { key: 'u', options: { unique: true } }, 'i'])
   }
   static async add(information) {
-    try {
-      if (await Information.db.findOne({ u: information.url })) {
-        return false;
-      }
-      let olds = (await Information.db.find({
-        m: { $gte: +Date.now() - 86400000 }
-      })).map(Information.from);
-      await Information.db.insert(Information.to(information));
-      for (let old of olds) {
-        let d = Information.distance(old.simhash, information.simhash);
-        if (d < 32) {
-          log.info(`发现相似新闻: ${information.title} <${ information.simhash }> | ${near.title} <${ near.simhash }> | 相似度: ${ d }`);
-        }
-      }
-      let near = Enumerable.firstOrDefault(olds, false, info => (Information.distance(info.simhash, information.simhash) <= 4));
-      if (near) log.info(`认定相似新闻: ${information.title} <${ information.simhash }> | ${near.title} <${ near.simhash }>`);
-      return !near;
-    } catch(e) {
-      return false;
-    }
+    return (await Information.addAll([ information ])).length > 0;
   }
   static async addAll(informations) {
     let result = [];
@@ -216,20 +197,20 @@ class Information {
           continue;
         }
         await Information.db.insert(Information.to(information));
-        olds.push(information);
         for (let old of olds) {
           let d = Information.distance(old.simhash, information.simhash);
-          if (d < 32) {
-            log.info(`发现相似新闻: ${information.title} <${ information.simhash }> | ${near.title} <${ near.simhash }> | 相似度: ${ d }`);
+          if (d <= config.similar.warn) {
+            log.debug(`对比新闻相似度: ${information.title} ${information.summary || ''} # ${ information.url } # <${ information.simhash }> | ${old.title} ${old.summary || ''} # ${ old.url } # <${ old.simhash }> | 相似度: ${ d }`);
           }
         }
-        let near = Enumerable.firstOrDefault(olds, false, info => (Information.distance(info.simhash, information.simhash) <= 4));
+        let near = Enumerable.firstOrDefault(olds, false, info => (Information.distance(info.simhash, information.simhash) <= config.similar.truly));
         if (near) log.info(`出现相似新闻: ${information.title} <${ information.simhash }> | ${near.title} <${ near.simhash }>`);
         else result.push(information);
+        olds.push(information);
       }
-
       return result;
     } catch(e) {
+      log.error(e);
       return result;
     }
   }

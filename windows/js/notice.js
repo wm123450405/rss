@@ -62,11 +62,13 @@ window.addEventListener('load', function() {
   })
 
   document.getElementById('close').addEventListener('click', event => {
+    document.getElementById('image').src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     ipcRenderer.send('notice', { type: 'close' });
     event.stopPropagation();
   })
 
   document.getElementById('read').addEventListener('click', event => {
+    document.getElementById('image').src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     ipcRenderer.send('notice', { type: 'read' });
     event.stopPropagation();
   })

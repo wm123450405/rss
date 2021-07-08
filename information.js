@@ -197,15 +197,16 @@ class Information {
           continue;
         }
         await Information.db.insert(Information.to(information));
-        for (let old of olds) {
-          let d = Information.distance(old.simhash, information.simhash);
-          if (d <= Math.max(config.similar.hash * 4 / Math.ceil(Math.min(old.title.length / titleWeightSplit + (old.summary || '').length / summaryWeightSplit, information.title.length / titleWeightSplit + (information.summary || '').length / summaryWeightSplit) + 1), config.similar.warn)) {
-            log.debug(`对比新闻相似度: ${information.title} ${information.summary || ''} # ${ information.url } # <${ information.simhash }> | ${old.title} ${old.summary || ''} # ${ old.url } # <${ old.simhash }> | 相似度: ${ d }`);
-          }
-        }
+        // for (let old of olds) {
+        //   let d = Information.distance(old.simhash, information.simhash);
+        //   if (d <= Math.max(config.similar.hash * 4 / Math.ceil(Math.min(old.title.length / titleWeightSplit + (old.summary || '').length / summaryWeightSplit, information.title.length / titleWeightSplit + (information.summary || '').length / summaryWeightSplit) + 1), config.similar.warn)) {
+        //     log.debug(`对比新闻相似度: ${information.title} ${information.summary || ''} # ${ information.url } # <${ information.simhash }> | ${old.title} ${old.summary || ''} # ${ old.url } # <${ old.simhash }> | 相似度: ${ d }`);
+        //   }
+        // }
         let near = Enumerable.firstOrDefault(olds, false, old => (Information.distance(old.simhash, information.simhash) <= Math.max(config.similar.hash * 4 / Math.ceil(Math.min(old.title.length / titleWeightSplit + (old.summary || '').length / summaryWeightSplit, information.title.length / titleWeightSplit + (information.summary || '').length / summaryWeightSplit) + 1) * config.similar.truly / config.similar.warn, config.similar.truly)));
         if (near) {
-          log.info(`出现相似新闻: ${information.title} <${ information.simhash }> | ${near.title} <${ near.simhash }>`);
+          let d = Information.distance(near.simhash, information.simhash);
+          log.info(`出现相似新闻: ${information.title} <${ information.simhash }> | ${near.title} <${ near.simhash }> | 相似度: ${ d }`);
           let index = result.indexOf(near);
           if (index !== -1) {
             if (near.title.length + (near.summary || '').length < information.title.length + (information.summary || '').length) {

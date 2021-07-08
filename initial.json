@@ -1,6 +1,19 @@
 {
   "parsers": [
     {
+      "name": "体育",
+      "parsers": [
+        {
+          "name": "新浪体育",
+          "code": "sports.sina",
+          "type": "PAGE",
+          "url": "http://sports.sina.com.cn/",
+          "parser": "[...[...document.querySelectorAll('.ty-card-type10 .ty-card-tt a')].map(a => ({url: a.href, title: a.textContent, datetime: +Date.now()})), ...[...document.querySelectorAll('.ty-card-type1')].filter(div => div.querySelector('.ty-card-tt')).map(div => ({url: div.querySelector('a').href, title: div.querySelector('.ty-card-tt').textContent, image: div.querySelector('img') &&  div.querySelector('img').src, datetime: +Date.now()})), ...[...document.querySelectorAll('.ty-card-tt+.ty-card-type10-i .ty-card-type10-makeup a')].map(a => ({url: a.href, title:a.textContent, datetime:+Date.now()}))]",
+          "icon": "https://dss2.bdstatic.com/6Ot1bjeh1BF3odCf/it/u=3937041475,2344537824&fm=85&app=79&f=JPEG?w=121&h=75&s=0DE6CD13D3B06D805451B0D6000080B1"
+        }
+      ]
+    },
+    {
       "name": "科技",
       "parsers": [
         {
@@ -23,8 +36,8 @@
           "name": "DoNews",
           "code": "tel.donews",
           "type": "PAGE",
-          "url": "https://www.donews.com/",
-          "parser": "$('.left a.news-item').map(function() {return {title:$(this).find('.title').text(), summary:$(this).find('.desc').text(), image:$(this).find('img').attr('src'), url:$(this).attr('href'), datetime: $(this).find('.pub-date').find('label').text()}}).toArray()",
+          "url": "https://www.donews.com/newsflash/index",
+          "parser": "[...document.querySelectorAll('.flash-left-item')].map(div => ({ url:div.querySelector('a').href, title: div.querySelector('.flash-item-title').textContent, summary: div.querySelector('.flash-item-content').textContent, datetime: div.querySelector('.flash-item-date').textContent.trim() }))",
           "icon": "https://www.donews.com/static/2020824new/images/logo.png"
         }
       ]
@@ -113,6 +126,14 @@
           "url": "http://www.chinanews.com/scroll-news/news1.html",
           "parser": "$('.content_list>ul>li').not('.nocontent').map(function() { return { title: $(this).find('a').text(), url: $(this).find('a').attr('href'), datetime: $(this).find('.dd_time').text() }}).toArray()",
           "icon": "http://i8.chinanews.com/2013/home/images/logo.jpg"
+        },
+        {
+          "name": "搜狐新闻",
+          "code": "sohu",
+          "type": "PAGE",
+          "url": "http://news.sohu.com/",
+          "parser": "[...document.querySelectorAll('.list16 li>a')].filter(a => !/javascript/ig.test(a.href.trim())).map(a => ({url:a.href, title:(a.title || '').trim() || a.textContent, datetime: +Date.now()}))",
+          "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAAkCAYAAABrA8OcAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUE5RDhBNTM4OTNCMTFFNzlGNUU5RkY2RTM5MkUyRUUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUE5RDhBNTQ4OTNCMTFFNzlGNUU5RkY2RTM5MkUyRUUiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5QTlEOEE1MTg5M0IxMUU3OUY1RTlGRjZFMzkyRTJFRSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5QTlEOEE1Mjg5M0IxMUU3OUY1RTlGRjZFMzkyRTJFRSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pic0/T4AAAucSURBVHja7Fx7bBTH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"
         }
       ]
     }

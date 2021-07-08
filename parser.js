@@ -17,7 +17,7 @@ class ParserWindow {
     this.app = app;
     this.shown = false;
     this.window = new BrowserWindow({
-      width: 600,
+      width: 1000,
       height: 0,
       minimizable: false,
       maximizable: false,
@@ -204,6 +204,8 @@ class DefaultPageParser extends Parser {
         if (info.image && info.image.startsWith('//')) {
           info.image = (this.url.startsWith('https:') ? 'https:' : 'http:') + info.image;
         }
+        info.title = (info.title || '').trim();
+        info.summary = (info.summary || '').trim();
       }
       return infos;
     } else {
@@ -281,7 +283,8 @@ class SearchParser extends DefaultPageParser {
   }
   static parsers(keyword) {
     return [
-      new BaiduSearchParser(keyword)
+      new BaiduSearchParser(keyword),
+      new ToutiaoSearchParser(keyword)
     ];
   }
 }
@@ -295,6 +298,18 @@ class BaiduSearchParser extends SearchParser {
       `https://www.baidu.com/img/flexible/logo/pc/result.png`,
       `$('.result-op.new-pmd').map(function() { return { title: $(this).find('a.news-title-font_1xS-F').text(), summary: $(this).find('.c-span-last>.c-font-normal').text(), image: $(this).find('img').attr('src'), url: $(this).find('a').attr('href'), datetime: $(this).find('.c-span-last .c-color-gray2').text() }}).toArray()`
     );
+  }
+}
+
+class ToutiaoSearchParser extends SearchParser {
+  constructor(keyword) {
+    super(
+      `https://so.toutiao.com/search?keyword=${ keyword }&pd=information&source=search_subtab_switch&dvpf=pc&aid=4916&page_num=0`,
+      `toutiao.${keyword}`,
+      `头条-${keyword}`,
+      `https://sf1-scmcdn-tos.pstatp.com/obj/goofy/tt_download_page/static/media/logo.7132cb1b.png`,
+      `[...document.querySelectorAll('.result-content[data-i]')].map(div => ({url:div.querySelector('a').href, title:div.querySelector('a').textContent, summary:div.querySelector('span').textContent, image: div.querySelector('img') && div.querySelector('img').src, datetime: [...div.querySelectorAll('span')].reverse()[0].textContent}))`
+    )
   }
 }
 

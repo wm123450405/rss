@@ -1,5 +1,6 @@
 const nodejieba = require('nodejieba');
 const path = require('path');
+const fs = require('fs');
 const log = require('electron-log');
 const crypto = require('crypto');
 const Enumerable = require('linq-js');
@@ -30,31 +31,34 @@ nodejieba.load({
 const formatDateTime = datetime => {
   if (datetime) {
     if (Number.isInteger(datetime)) return datetime;
-    if (/^\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().toLocaleDateString() + ' ' +  datetime + ':00').getTime();
-    if (/^\d{1,2}[-/月]\d{1,2}日$/ig.test(datetime)) return new Date(new Date().getFullYear() + '/' + datetime.replace(/[-年月]/ig, '/').replace('日', '') + ' 00:00:00').getTime();
-    if (/^\d{1,2}[-/月]\d{1,2}日? \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().getFullYear() + '/' + datetime.replace(/[-年月]/ig, '/').replace('日', '') + ':00').getTime();
-    if (/^(\d{2}|\d{4})[-/年]\d{1,2}[-/月]\d{1,2}日?$/ig.test(datetime)) return new Date(datetime.replace(/[-年月]/ig, '/').replace('日', '') + ' 00:00:00').getTime();
-    if (/^(\d{2}|\d{4})[-/年]\d{1,2}[-/月]\d{1,2}日? \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/[-年月]/ig, '/').replace('日', '') + ':00').getTime();
-    if (/^(\d{2}|\d{4})[-/年]\d{1,2}[-/月]\d{1,2}日? \d{1,2}:\d{2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/[-年月]/ig, '/').replace('日', '')).getTime();
-    if (/^\d+天前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('天前', '')) * 86400000;
-    if (/^\d+小时前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('小时前', '')) * 3600000;
-    if (/^\d+分钟前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('分钟前', '')) * 60000;
-    if (/^\d+秒前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('秒前', '')) * 1000;
-    if ('刚刚' === datetime) return +Date.now();
+    datetime = datetime.trim();
+    if (datetime) {
+      if (/^\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().toLocaleDateString() + ' ' +  datetime + ':00').getTime();
+      if (/^\d{1,2}[-/月]\d{1,2}日$/ig.test(datetime)) return new Date(new Date().getFullYear() + '/' + datetime.replace(/[-年月]/ig, '/').replace('日', '') + ' 00:00:00').getTime();
+      if (/^\d{1,2}[-/月]\d{1,2}日? \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(new Date().getFullYear() + '/' + datetime.replace(/[-年月]/ig, '/').replace('日', '') + ':00').getTime();
+      if (/^(\d{2}|\d{4})[-/年]\d{1,2}[-/月]\d{1,2}日?$/ig.test(datetime)) return new Date(datetime.replace(/[-年月]/ig, '/').replace('日', '') + ' 00:00:00').getTime();
+      if (/^(\d{2}|\d{4})[-/年]\d{1,2}[-/月]\d{1,2}日? \d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/[-年月]/ig, '/').replace('日', '') + ':00').getTime();
+      if (/^(\d{2}|\d{4})[-/年]\d{1,2}[-/月]\d{1,2}日? \d{1,2}:\d{2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/[-年月]/ig, '/').replace('日', '')).getTime();
+      if (/^\d+天前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('天前', '')) * 86400000;
+      if (/^\d+小时前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('小时前', '')) * 3600000;
+      if (/^\d+分钟前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('分钟前', '')) * 60000;
+      if (/^\d+秒前$/ig.test(datetime)) return +Date.now() - parseInt(datetime.replace('秒前', '')) * 1000;
+      if ('刚刚' === datetime) return +Date.now();
 
-    let today = Math.floor(+Date.now() / 86400000) * 86400000;
-    let yesterday = today - 86400000;
-    let beforeYesterday = yesterday - 86400000;
-    if ('今日' === datetime || '今天' === datetime) return today;
-    if (/^今(日|天)\s*\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/今(日|天)\s*/ig, new Date(today).toLocaleDateString() + ' ') + ':00').getTime();
-    if (/^今(日|天)\s*\d{1,2}:\d{2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/今(日|天)\s*/ig, new Date(today).toLocaleDateString() + ' ')).getTime();
-    if ('昨日' === datetime || '昨天' === datetime) return yesterday;
-    if (/^昨(日|天)\s*\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/昨(日|天)\s*/ig, new Date(yesterday).toLocaleDateString() + ' ') + ':00').getTime();
-    if (/^昨(日|天)\s*\d{1,2}:\d{2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/昨(日|天)\s*/ig, new Date(yesterday).toLocaleDateString() + ' ')).getTime();
-    if ('前日' === datetime || '前天' === datetime) return beforeYesterday;
-    if (/^前(日|天)\s*\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/前(日|天)\s*/ig, new Date(beforeYesterday).toLocaleDateString() + ' ') + ':00').getTime();
-    if (/^前(日|天)\s*\d{1,2}:\d{2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/前(日|天)\s*/ig, new Date(beforeYesterday).toLocaleDateString() + ' ')).getTime();
+      let today = Math.floor(+Date.now() / 86400000) * 86400000;
+      let yesterday = today - 86400000;
+      let beforeYesterday = yesterday - 86400000;
+      if ('今日' === datetime || '今天' === datetime) return today;
+      if (/^今(日|天)\s*\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/今(日|天)\s*/ig, new Date(today).toLocaleDateString() + ' ') + ':00').getTime();
+      if (/^今(日|天)\s*\d{1,2}:\d{2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/今(日|天)\s*/ig, new Date(today).toLocaleDateString() + ' ')).getTime();
+      if ('昨日' === datetime || '昨天' === datetime) return yesterday;
+      if (/^昨(日|天)\s*\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/昨(日|天)\s*/ig, new Date(yesterday).toLocaleDateString() + ' ') + ':00').getTime();
+      if (/^昨(日|天)\s*\d{1,2}:\d{2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/昨(日|天)\s*/ig, new Date(yesterday).toLocaleDateString() + ' ')).getTime();
+      if ('前日' === datetime || '前天' === datetime) return beforeYesterday;
+      if (/^前(日|天)\s*\d{1,2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/前(日|天)\s*/ig, new Date(beforeYesterday).toLocaleDateString() + ' ') + ':00').getTime();
+      if (/^前(日|天)\s*\d{1,2}:\d{2}:\d{2}$/ig.test(datetime)) return new Date(datetime.replace(/前(日|天)\s*/ig, new Date(beforeYesterday).toLocaleDateString() + ' ')).getTime();
 
+    }
     return 0;
   } else {
     return 0;
@@ -206,7 +210,9 @@ class Information {
         let near = Enumerable.firstOrDefault(olds, false, old => (Information.distance(old.simhash, information.simhash) <= Math.max(config.similar.hash * 4 / Math.ceil(Math.min(old.title.length / titleWeightSplit + (old.summary || '').length / summaryWeightSplit, information.title.length / titleWeightSplit + (information.summary || '').length / summaryWeightSplit) + 1) * config.similar.truly / config.similar.warn, config.similar.truly)));
         if (near) {
           let d = Information.distance(near.simhash, information.simhash);
-          log.info(`出现相似新闻: ${information.title} <${ information.simhash }> | ${near.title} <${ near.simhash }> | 相似度: ${ d }`);
+          if (d > 0) {
+            log.info(`出现相似新闻: ${information.title} <${ information.simhash }> | ${near.title} <${ near.simhash }> | 相似度: ${ d }`);
+          }
           let index = result.indexOf(near);
           if (index !== -1) {
             if (near.title.length + (near.summary || '').length < information.title.length + (information.summary || '').length) {
@@ -227,16 +233,31 @@ class Information {
   }
   static async hotTags(ignores, latest = +Date.now() - 86400000) {
     ignores = ignores || [];
+
+    let now = +Date.now();
+
     let informations = (await Information.db.find({
       m: { $gte: latest }
     })).map(Information.from);
-    return Enumerable.from(informations)
+
+    // fs.writeFileSync('./informations.json.js', `let g = typeof window === 'undefined' ? module.exports : window; g['informations.json.js'] = ` + JSON.stringify(informations), 'utf-8');  
+  
+    log.debug(`load ${ informations.length } data from db used ${ +Date.now() - now } ms`);
+    now = +Date.now();
+  
+
+    let result = Enumerable.from(informations)
       .selectMany(info => info.tags)
-      .where(({ word, tag }) => !ignoreTag({ word, tag }) && !ignores.includes(word.toLowerCase()))
-      .groupBy(({ word, tag }) => ({ word, tag }), tag => tag.weight, ({ word, tag }, grouping) => ({ word, tag, weight: grouping.reduce(weightMerge, 0) }), (one, other) => one.word === other.word && one.tag === other.tag)
+      .where(infoTag => !ignoreTag(infoTag) && !ignores.includes(infoTag.word.toLowerCase()))
+      .groupBy(({ word, tag }) => word + '~$~' + tag, tag => tag.weight, (key, grouping) => ({ key, word: key.split('~$~')[0], weight: grouping.reduce(weightMerge, 0) }))
       .orderByDescending(tag => tag.weight)
       .take(config.hot.size)
+      .select()
       .toArray();
+
+    log.debug(`calc hot tags from ${ Enumerable.sum(informations, info => info.tags.length) } tags used ${ +Date.now() - now } ms`);
+
+    return result;
   }
 }
 

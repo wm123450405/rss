@@ -132,11 +132,17 @@ class Parser {
   static restore() {
     const storage = JSON.parse(fs.readFileSync(Parser.dataFile));
     storage.parsers = (storage.parsers || []).map(Parser.auto);
+    storage.search = !!storage.search;
     return storage;
   }
-  static save(storage) {
-    storage.parsers = storage.parsers.map(parser => (parser.code || parser.url));
-    fs.writeFileSync(Parser.dataFile, JSON.stringify(storage));
+  static save({ parsers, search }) {
+    fs.writeFileSync(Parser.dataFile, JSON.stringify({
+      parsers: parsers.map(parser => (parser.code || parser.url)),
+      search: !!search
+    }));
+  }
+  static clear() {
+    Parser.save({ parsers:[], search: false });
   }
   static page({ code, name, url, icon, parser }) {
     if (parser) {

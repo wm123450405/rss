@@ -58,7 +58,7 @@ class Progress {
   async update(progress, tip) {
     if (this.shown) {
       this.progressing = true;
-      this.tip = tip || this.tip;
+      this.tip = typeof tip === 'undefined' ? this.tip : tip;
       this.window.webContents.send('progress', { type: 'progress', title: this.title, progress, tip: this.tip });
       while(this.progressing) {
         await sleep(100);

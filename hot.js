@@ -121,6 +121,10 @@ class Hot {
     };
     fs.writeFileSync(this.dataFile, JSON.stringify(saved));
   }
+  clear() {
+    this.matcher.tags = [];
+    this.save();
+  }
 }
 
 module.exports = Hot;

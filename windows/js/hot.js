@@ -25,6 +25,9 @@ window.addEventListener('load', function() {
         tagDiv.className = 'tag';
         tagDiv.innerHTML = tag;
         tagDiv.addEventListener('click', () => {
+          clearInterval(timer);
+          countdown = -1;
+          document.getElementById('cancel').innerHTML = '取消';
           if (tags.includes(tag)) {
             tags = tags.filter(t => t !== tag);
             tagDiv.className = 'tag';
@@ -40,6 +43,9 @@ window.addEventListener('load', function() {
         tagDiv.className = 'tag';
         tagDiv.innerHTML = tag;
         tagDiv.addEventListener('click', () => {
+          clearInterval(timer);
+          countdown = -1;
+          document.getElementById('cancel').innerHTML = '取消';
           if (tags.includes(tag)) {
             tags = tags.filter(t => t !== tag);
             tagDiv.className = 'tag';
@@ -58,14 +64,14 @@ window.addEventListener('load', function() {
         document.body.style.height = size.height + 'px';
         ipcRenderer.send('hot', { type: 'resize', size });
       });
-      document.getElementById('cancel').innerHTML = `取消 (${ formatCountdown(countdown) })`;
+      document.getElementById('cancel').innerHTML = countdown < 0 ? '取消' : `取消 (${ formatCountdown(countdown) })`;
       timer = setInterval(() => {
         countdown--;
         if (countdown === 0) {
           clearInterval(timer);
           ipcRenderer.send('hot', { type: 'cancel' });
         } else {
-          document.getElementById('cancel').innerHTML = `取消 (${ formatCountdown(countdown) })`;
+          document.getElementById('cancel').innerHTML = countdown < 0 ? '取消' : `取消 (${ formatCountdown(countdown) })`;
         }
       }, 1000);
     }

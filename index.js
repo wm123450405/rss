@@ -1,9 +1,12 @@
 const { app, Tray, Menu } = require('electron');
+const path = require('path');
+const dir = app.isPackaged ? path.dirname(app.getPath('exe')) : __dirname;
+const user = app.getPath('userData');
 const log = require('electron-log');
-const { autoUpdater } = require('electron-updater');
 console.log = log.info;
 console.error = log.error;
-const path = require('path');
+const { autoUpdater } = require('electron-updater');
+const Store = require('electron-store');
 const puppeteer = require('puppeteer');
 const Pool = require('./pool');
 const Parser = require('./parser');
@@ -16,20 +19,25 @@ const Hot = require('./hot');
 const fs = require('fs');
 const Enumerable = require('linq-js');
 const config = require('./config');
-const browserFetcher = puppeteer.createBrowserFetcher({ path: path.resolve('puppeteer'), host: 'https://npm.taobao.org/mirrors' });
+const browserFetcher = puppeteer.createBrowserFetcher({ path: path.join(user, 'puppeteer'), host: 'https://npm.taobao.org/mirrors' });
 const revision = require('puppeteer/package').puppeteer.chromium_revision;
+const { exit } = require('process');
+const ex = process.execPath;
 
 log.transports.file.level = "debug";
 
-if (!fs.existsSync('debug')) {
-  fs.mkdirSync('debug');
+log.debug(dir);
+
+if (!fs.existsSync(path.join(dir, 'debug'))) {
+  fs.mkdirSync(path.join(dir, 'debug'));
 }
-if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
-  fs.mkdirSync(path.join(app.getPath('userData'), config.path.dir));
+if (!fs.existsSync(path.join(user, config.path.dir))) {
+  fs.mkdirSync(path.join(user, config.path.dir));
 }
 
 (async () => {
   log.debug('app starting');
+  const store = new Store();
   let browser, pool;
   try {
     if (app.requestSingleInstanceLock()) {
@@ -44,8 +52,8 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
           downloaded = true;
           downloadError = error;
         });
-      if (!fs.existsSync(config.path.dir)) {
-        fs.mkdirSync(config.path.dir);
+      if (!fs.existsSync(path.join(dir, config.path.dir))) {
+        fs.mkdirSync(path.join(dir, config.path.dir));
       }
 
       log.debug('application starting');
@@ -81,11 +89,11 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
       }
       if (parsers.length) {
         if (!downloaded) {
-          await progress.show('更新必要组件', '0.00%');
+          await progress.show('更新必要组件', '');
         }
         await waitForCondition(async () => {
           if (totalBytes) {
-            await progress.update(downloadBytes * 100 / totalBytes, downloadBytes !== totalBytes ? (downloadBytes * 100 / totalBytes).toFixed(2) + '%' : '安装中...')
+            await progress.update(downloadBytes * 100 / totalBytes, downloadBytes !== totalBytes ? '' : '安装中...')
           }
           return downloaded;
         }, { waitMs: 3600000 });
@@ -157,7 +165,9 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
             return page;
           },
           async page => {
-            await page.close();
+            if (page && !page.isClosed()) {
+              await page.close();
+            }
           }
         );
 
@@ -165,9 +175,59 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
       
         await Information.initStorage(app);
 
-        await sleep(5000);
+        await sleep(1000);
+
+        const autoOpen = store.get('base.autoOpen') !== false;
+        store.set('base.autoOpen', autoOpen);
+        if (app.isPackaged) {
+          app.setLoginItemSettings({
+            openAtLogin: autoOpen,
+            path: ex,
+            args: []
+          });
+        }
+
         tray = new Tray(path.join(__dirname, 'assets/icon/icon.ico'));
+
+        const exit = () => {
+          stop = true;
+          pool.finalize(async (page) => {
+            if (page && !page.isClosed()) {
+              await page.close();
+            }
+          });
+          hot.close();
+          notice.close();
+          progress.close();
+          Words.close();
+          Parser.close();
+          tray.destroy();
+        };
+
         const settingsMenu = Menu.buildFromTemplate([
+          {
+            label: '开机启动',
+            type: 'checkbox',
+            checked: autoOpen,
+            enabled: app.isPackaged,
+            click: async () => {
+              let menuItem = settingsMenu.items.find(mi => mi.label === '开机启动');
+              store.set('base.autoOpen', menuItem.checked);
+              if (menuItem.checked) {
+                app.setLoginItemSettings({
+                  openAtLogin: true,
+                  path: ex,
+                  args: []
+                });
+              } else {
+                app.setLoginItemSettings({
+                  openAtLogin: false,
+                  path: ex,
+                  args: []
+                });
+              }
+            }
+          },
           {
             label: '配置源',
             click: async () => {
@@ -201,6 +261,15 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
               await notice.resume();
               settingsMenu.items.find(mi => mi.label === '配置热词').enabled = true;
             }
+          },
+          {
+            label: '清空痕迹',
+            click: async () => {
+              await hot.clear();
+              await Parser.clear();
+              exit();
+              app.relaunch();
+            }
           }
         ]);
         const contextMenu = Menu.buildFromTemplate([
@@ -211,15 +280,7 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
           },
           {
             label: '退出',
-            click: () => {
-              stop = true;
-              hot.close();
-              notice.close();
-              progress.close();
-              Words.close();
-              Parser.close();
-              tray.destroy();
-            }
+            click: exit
           },
         ])
         tray.setToolTip('smart-rss');
@@ -260,7 +321,9 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
                 log.info(infos.length + ' news got from: ' + parser.url);
                 informations.push(...infos);
               } catch(e) {
-                log.error(e);
+                if (!stop) {
+                  log.error(e);
+                }
               } finally {
                 if (page) pool.free(page);
               }
@@ -287,7 +350,9 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
                   log.info(infos.length + ' news searched from: ' + parser.url);
                   informations.push(...infos);
                 } catch(e) {
-                  log.error(e);
+                  if (!stop) {
+                    log.error(e);
+                  }
                 } finally {
                   if (page) pool.free(page);
                 }
@@ -340,9 +405,16 @@ if (!fs.existsSync(path.join(app.getPath('userData'), config.path.dir))) {
     log.error(e);
   } finally {
     try {
-      await parallel((pool ? pool.values : []).map(page => (async () => {
-        if (page && page.url()) await page.screenshot({ path: `debug/screenshot.${ page.url().replace(/[-:&%\?\/\.]/ig, '_') }.png`, fullPage: true });
-      })()));
+      if (pool) {
+        await pool.finalize(async (page) => {
+          if (page && !page.isClosed()) {
+            await page.close();
+          }
+        });
+        await parallel(pool.values.map(page => (async () => {
+          if (page && !page.isClosed() && page.url()) await page.screenshot({ path: `debug/screenshot.${ page.url().replace(/[-:&%\?\/\.]/ig, '_') }.png`, fullPage: true });
+        })()));
+      }
     } catch(e) {
       log.error(e);
     } finally {

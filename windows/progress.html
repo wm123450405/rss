@@ -23,6 +23,9 @@
       height: 5px;
       overflow: hidden;
     }
+    #current {
+      align-self: flex-end;
+    }
     #tip {
       align-self: flex-end;
     }
@@ -36,7 +39,8 @@
     <div id="progress">
       <div id="progress-current" style="width: 0%;"></div>
     </div>
-    <div id="tip" class="tip"></div>
+    <div id="current" class="tip" style="display: none;"></div>
+    <div id="tip" class="tip" style="display: none;"></div>
   </div>
 </body>
 </html>

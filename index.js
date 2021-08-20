@@ -171,7 +171,8 @@ if (!fs.existsSync(path.join(user, config.path.dir))) {
             if (page && !page.isClosed()) {
               await page.close();
             }
-          }
+          },
+          5, 20, 200 * 1024 * 1024
         );
 
         log.debug('chromium page tab started');

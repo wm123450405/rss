@@ -1,14 +1,20 @@
 const { sleep, parallel } = require("asyncbox");
+const os = require('os');
 
 const destroyWait = 300;
 
+const calcMax = (count, max, usage) => {
+    return Math.min(max, count + Math.floor(Math.max(usage, os.freemem() - 512*1024*1024) / usage) - 1);
+}
+
 class Pool {
-    constructor(creation, freeing, destroy, idle = 5, max = 20) {
+    constructor(creation, freeing, destroy, idle, max, usage) {
         this.creation = creation;
         this.freeing = freeing;
         this.destroy = destroy;
         this.idle = idle;
         this.max = max;
+        this.usage = usage;
         this.pool = [];
         this.used = [];
         this.count = 0;
@@ -17,7 +23,7 @@ class Pool {
     }
     async check() {
         if (!this.finalized) {
-            if ((this.count - this.used.length) < this.idle && this.count < this.max) {
+            if ((this.count - this.used.length) < this.idle && this.count < calcMax(this.count, this.max, this.usage)) {
                 this.count++;
                 try {
                     this.pool.push(await this.creation());
@@ -40,7 +46,7 @@ class Pool {
                 }
             }
             if (!this.finalized) {
-                if ((this.count - this.used.length) < this.idle && this.count < this.max) {
+                if ((this.count - this.used.length) < this.idle && this.count < calcMax(this.count, this.max, this.usage)) {
                     this.check();
                 } else if ((this.count - this.used.length) > this.idle) {
                     this.check();

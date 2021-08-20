@@ -1,7 +1,11 @@
 const { sleep, parallel } = require("asyncbox");
+
+const destroyWait = 300;
+
 class Pool {
-    constructor(creation, destroy, idle = 5, max = 20) {
+    constructor(creation, freeing, destroy, idle = 5, max = 20) {
         this.creation = creation;
+        this.freeing = freeing;
         this.destroy = destroy;
         this.idle = idle;
         this.max = max;
@@ -13,12 +17,34 @@ class Pool {
     }
     async check() {
         if (!this.finalized) {
-            if (this.pool.length < this.idle && this.count < this.max) {
-                this.pool.push(await this.creation());
+            if ((this.count - this.used.length) < this.idle && this.count < this.max) {
                 this.count++;
+                try {
+                    this.pool.push(await this.creation());
+                } catch(e) {
+                    this.count--;
+                }
+            } else if ((this.count - this.used.length) > this.idle) {
+                for(let i = 0; i < destroyWait && !this.finalized; i++) {
+                    await sleep(1000);
+                }
+                if (!this.finalized && (this.count - this.used.length) > this.idle) {
+                    try {
+                        let obj = this.pool.shift();
+                        this.count--;
+                        await this.destroy(obj);
+                    } catch(e) {
+                        this.pool.push(obj);
+                        this.count++;
+                    };
+                }
             }
-            if (this.pool.length < this.idle && this.count < this.max) {
-                this.check();
+            if (!this.finalized) {
+                if ((this.count - this.used.length) < this.idle && this.count < this.max) {
+                    this.check();
+                } else if ((this.count - this.used.length) > this.idle) {
+                    this.check();
+                }
             }
         }
     }
@@ -35,14 +61,23 @@ class Pool {
         }
     }
     async free(obj) {
-        this.pool.push(obj);
-        let index = this.used.indexOf(obj);
-        if (index !== -1) {
-            this.used.splice(index, 1);
-        }
-        if (this.pool.length > this.idle) {
-            await this.destroy(this.pool.shift());
-            this.count--;
+        try {
+            let index = this.used.indexOf(obj);
+            if (index !== -1) {
+                this.used.splice(index, 1);
+            }
+            await this.freeing(obj);
+            this.pool.push(obj);
+        } catch(e) {
+            try {
+                this.count--;
+                await this.destroy(obj);
+            } catch(e) {
+                this.pool.push(obj);
+                this.count++;
+            }
+        } finally {
+            this.check();
         }
     }
     get values() {
@@ -58,9 +93,22 @@ class Pool {
             } catch(e) {}
         })()));
     }
+    async destoryAll() {
+        await parallel(this.pool.map(obj => (async () => {
+            try {
+                let index = this.pool.indexOf(obj);
+                if (index !== -1) {
+                    this.pool.splice(index, 1);
+                    this.count--;
+                    await this.destroy(obj);
+                }
+            } catch(e) {}
+        })()));
+    }
     async finalize(callback) {
         this.finalized = true;
         await this.freeAll(callback);
+        await this.destoryAll();
     }
 }
 

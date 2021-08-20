@@ -165,6 +165,9 @@ if (!fs.existsSync(path.join(user, config.path.dir))) {
             return page;
           },
           async page => {
+            await page.goto('about:blank');
+          },
+          async page => {
             if (page && !page.isClosed()) {
               await page.close();
             }
